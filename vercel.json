@@ -4,11 +4,6 @@
   "installCommand": "pip install -r requirements.txt",
   "buildCommand": "cd frontend && npm install && npm run build",
   "outputDirectory": "frontend/dist/schoolassist",
-  "functions": {
-    "api/index.py": {
-      "runtime": "python3.12"
-    }
-  },
   "rewrites": [
     {
       "source": "/api/(.*)",

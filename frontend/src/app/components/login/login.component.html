@@ -1,0 +1,184 @@
+<div class="lp">
+  <!-- soft background decor -->
+  <span class="lp-blob lp-blob-tr" aria-hidden="true"></span>
+  <span class="lp-blob lp-blob-bl" aria-hidden="true"></span>
+  <span class="lp-dots" aria-hidden="true"></span>
+
+  <header class="lp-top">
+    <div class="lp-brand">
+      <span class="lp-logo">S</span>
+      <span class="lp-brand-text">
+        <strong>SchoolAssist</strong>
+        <small>Pakistan's School Management Platform</small>
+      </span>
+    </div>
+    <div class="lp-motto" aria-hidden="true">
+      <span>Discipline</span><i></i><span>Learning</span><i></i><span>A Brighter Tomorrow</span>
+    </div>
+  </header>
+
+  <main class="lp-main">
+    <!-- Left: marketing hero -->
+    <section class="lp-hero">
+      <span class="lp-pill">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 9 9-5 9 5-9 5-9-5Z" /><path d="M7 11.4V16c2.8 1.8 7.2 1.8 10 0v-4.6" /></svg>
+        Empowering Education
+      </span>
+      <h1 class="lp-title">Teach. Inspire.<br /><span>Transform.</span></h1>
+      <span class="lp-strokes" aria-hidden="true"><i></i><i></i></span>
+      <p class="lp-text">
+        One platform to manage your school, <span class="lp-u">teachers,</span> students and academic
+        <span class="lp-u">operations</span> — all in one place.
+      </p>
+      <div class="lp-features">
+        <div class="lp-feature">
+          <span class="lp-feature-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3" /><circle cx="17" cy="9" r="2.3" /><path d="M3.5 19c.5-3.3 2.5-5 5.5-5s5 1.7 5.5 5M15 15c2.8.2 4.5 1.5 5 4" /></svg>
+          </span>
+          <div>
+            <strong>Smart School Management</strong>
+            <small>Manage classes, staff and student progress.</small>
+          </div>
+        </div>
+        <div class="lp-feature">
+          <span class="lp-feature-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.2C10 4.7 7.5 4.2 4 4.2v14.6c3.5 0 6 .5 8 2 2-1.5 4.5-2 8-2V4.2c-3.5 0-6 .5-8 2Z" /><path d="M12 6.2v14.6" /></svg>
+          </span>
+          <div>
+            <strong>Simple Academic Workflows</strong>
+            <small>Save time and stay organized.</small>
+          </div>
+        </div>
+        <div class="lp-feature">
+          <span class="lp-feature-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 19 6v5c0 4.5-3 7.7-7 10-4-2.3-7-5.5-7-10V6l7-3Z" /><path d="m8.8 12 2.1 2.1 4.3-4.4" /></svg>
+          </span>
+          <div>
+            <strong>Secure &amp; Reliable</strong>
+            <small>Your data is protected with enterprise-grade security.</small>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Centre: the sign-in card -->
+    <section class="lp-card">
+      <span class="lp-card-logo">S</span>
+      <h2 class="lp-card-brand">SchoolAssist</h2>
+      <p class="lp-card-tag">School Management Made Simple</p>
+      <h3 class="lp-card-title">Welcome back</h3>
+      <p class="lp-card-sub">Sign in to continue to your dashboard.</p>
+
+      <form (ngSubmit)="submit()">
+        <label class="lp-field">
+          <span>Email Address</span>
+          <span class="lp-input">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5" /><path d="m3.5 7.5 8.5 6 8.5-6" /></svg>
+            <input type="email" name="email" [(ngModel)]="email" autocomplete="email" placeholder="Enter your email" />
+          </span>
+        </label>
+
+        <label class="lp-field">
+          <span>Password</span>
+          <span class="lp-input">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="9.5" rx="2.5" /><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" /></svg>
+            <input [type]="showPassword ? 'text' : 'password'" name="password" [(ngModel)]="password"
+              autocomplete="current-password" placeholder="Enter your password" />
+            <button type="button" class="lp-eye" (click)="showPassword = !showPassword"
+              [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" /><circle cx="12" cy="12" r="2.8" /><path *ngIf="showPassword" d="m4 4 16 16" /></svg>
+            </button>
+          </span>
+        </label>
+
+        <div class="lp-row">
+          <label class="lp-remember">
+            <input type="checkbox" name="rememberMe" [(ngModel)]="rememberMe" />
+            <span>Remember me</span>
+          </label>
+          <button type="button" class="lp-link" (click)="forgotPassword()">Forgot password?</button>
+        </div>
+
+        <div class="alert error" *ngIf="error">{{ error }}</div>
+        <div class="alert info" *ngIf="info">{{ info }}</div>
+
+        <button class="lp-submit" type="submit" [disabled]="loading">
+          {{ loading ? 'Signing in…' : 'Log in' }}
+          <span class="lp-arrow" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M5 12h13" /><path d="m13 6.5 5.5 5.5-5.5 5.5" /></svg>
+          </span>
+        </button>
+      </form>
+
+      <div class="lp-or" aria-hidden="true"><i></i><span>or</span><i></i></div>
+
+      <div class="lp-noaccess">
+        <span class="lp-noaccess-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3" /><circle cx="17" cy="9" r="2.3" /><path d="M3.5 19c.5-3.3 2.5-5 5.5-5s5 1.7 5.5 5M15 15c2.8.2 4.5 1.5 5 4" /></svg>
+        </span>
+        <div>
+          <strong>Don't have access?</strong>
+          <small>Contact your school administrator.</small>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right: school illustration + quote -->
+    <section class="lp-scene" aria-hidden="true">
+      <svg class="lp-scene-svg" viewBox="0 0 560 430">
+        <ellipse cx="280" cy="400" rx="252" ry="24" fill="#dfe7fb" />
+        <!-- side wings -->
+        <rect x="70" y="180" width="150" height="130" rx="6" fill="#ccd8f8" />
+        <rect x="340" y="180" width="150" height="130" rx="6" fill="#ccd8f8" />
+        <rect x="62" y="166" width="166" height="16" rx="8" fill="#b7c6f4" />
+        <rect x="332" y="166" width="166" height="16" rx="8" fill="#b7c6f4" />
+        <g fill="#eef3ff">
+          <rect x="88" y="200" width="28" height="30" rx="4" /><rect x="131" y="200" width="28" height="30" rx="4" /><rect x="174" y="200" width="28" height="30" rx="4" />
+          <rect x="88" y="246" width="28" height="30" rx="4" /><rect x="131" y="246" width="28" height="30" rx="4" /><rect x="174" y="246" width="28" height="30" rx="4" />
+          <rect x="358" y="200" width="28" height="30" rx="4" /><rect x="401" y="200" width="28" height="30" rx="4" /><rect x="444" y="200" width="28" height="30" rx="4" />
+          <rect x="358" y="246" width="28" height="30" rx="4" /><rect x="401" y="246" width="28" height="30" rx="4" /><rect x="444" y="246" width="28" height="30" rx="4" />
+        </g>
+        <!-- clock tower -->
+        <rect x="225" y="120" width="110" height="190" rx="6" fill="#dbe4fb" />
+        <path d="M215 122 280 72 345 122Z" fill="#b7c6f4" />
+        <circle cx="280" cy="150" r="17" fill="#f2f6ff" stroke="#9db1ef" stroke-width="3" />
+        <path d="M280 141v9l6 4" stroke="#5b74d6" stroke-width="2.5" fill="none" stroke-linecap="round" />
+        <g font-family="Georgia, serif" font-size="12" letter-spacing="1.6" fill="#7c8fd9" text-anchor="middle">
+          <text x="280" y="198">A BRIGHTER</text>
+          <text x="280" y="214">TOMORROW</text>
+        </g>
+        <rect x="248" y="228" width="26" height="30" rx="4" fill="#eef3ff" />
+        <rect x="286" y="228" width="26" height="30" rx="4" fill="#eef3ff" />
+        <rect x="262" y="268" width="36" height="42" rx="5" fill="#9db1ef" />
+        <rect x="250" y="308" width="60" height="8" rx="4" fill="#b7c6f4" />
+        <!-- trees -->
+        <circle cx="46" cy="284" r="26" fill="#c3d0f7" /><rect x="42" y="304" width="8" height="24" rx="3" fill="#a9baf0" />
+        <circle cx="522" cy="278" r="30" fill="#c3d0f7" /><rect x="518" y="302" width="8" height="26" rx="3" fill="#a9baf0" />
+        <circle cx="96" cy="316" r="16" fill="#d3ddf9" />
+        <!-- pencils behind the cup -->
+        <g stroke-linecap="round" fill="none">
+          <path d="M498 330 484 268" stroke="#5b74d6" stroke-width="8" />
+          <path d="M510 330 508 260" stroke="#7c92e2" stroke-width="8" />
+          <path d="M522 330 532 266" stroke="#5b74d6" stroke-width="8" />
+          <path d="M534 330 548 276" stroke="#8ea2e8" stroke-width="8" />
+        </g>
+        <g fill="#22307c">
+          <circle cx="484" cy="266" r="4" /><circle cx="508" cy="258" r="4" /><circle cx="532" cy="264" r="4" /><circle cx="548" cy="274" r="4" />
+        </g>
+        <rect x="482" y="322" width="62" height="76" rx="12" fill="#e4ebfc" />
+        <!-- book stack -->
+        <g font-family="Georgia, serif" font-size="15" fill="#4c5b96" text-anchor="middle">
+          <rect x="300" y="318" width="150" height="26" rx="9" fill="#aebfef" />
+          <text x="375" y="336">Learn</text>
+          <rect x="292" y="346" width="166" height="26" rx="9" fill="#c3d0f7" />
+          <text x="375" y="364">Grow</text>
+          <rect x="284" y="374" width="182" height="26" rx="9" fill="#aebfef" />
+          <text x="375" y="392">Achieve</text>
+        </g>
+      </svg>
+      <p class="lp-quote">"Education is the foundation<br />of a better tomorrow."</p>
+    </section>
+  </main>
+
+  <span class="lp-script" aria-hidden="true">Better Schools<br />Brighter Futures</span>
+</div>

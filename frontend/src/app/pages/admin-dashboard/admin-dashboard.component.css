@@ -1,0 +1,122 @@
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.owner-stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; margin-bottom: 16px; }
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 16px; }
+.owner-stat { background: #fff; border: 1px solid #e4e9f8; border-radius: 14px; padding: 16px; box-shadow: 0 4px 15px rgba(28, 36, 64, .05); }
+.owner-stat span, .owner-stat small { display: block; color: var(--ink-soft); font-size: 12px; }
+.owner-stat strong { display: block; color: var(--brand-deep); font-size: 26px; line-height: 1.2; margin: 5px 0; }
+.owner-row { margin-bottom: 16px; }
+.empty-panel { min-height: 112px; display: flex; flex-direction: column; justify-content: center; gap: 5px; color: var(--ink-soft); font-size: 13px; border: 1px dashed var(--line); border-radius: 12px; padding: 16px; background: #fbfcff; }
+.empty-panel strong { color: var(--ink); font-size: 14px; }.empty-panel.compact { min-height: 72px; }
+.activity-line { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); color: var(--ink-soft); font-size: 13.5px; }.activity-line:last-child { border-bottom: 0; }
+.activity-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--brand); flex: none; }.quick-actions { display: flex; gap: 8px; margin-top: 12px; }
+
+@media (max-width: 980px) {
+  .grid-2 { grid-template-columns: 1fr; }
+  .owner-stats { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 640px) { .owner-stats { grid-template-columns: repeat(2, 1fr); } }
+
+.seat-line { font-size: 15px; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+/* Seats card: teacher and student meters stacked with breathing room. */
+.seat-block { margin-top: 14px; }
+.seat-block .seat-line { margin-bottom: 6px; }
+.seat-block .progress { margin-bottom: 0; }
+.mini-stats { margin-top: 14px; }
+
+.progress {
+  height: 12px;
+  border-radius: 999px;
+  background: #E4EAFB;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--brand);
+  border-radius: 999px;
+  transition: width 0.3s;
+}
+
+.progress-fill.warn { background: #E0A43C; }
+
+.muted { color: var(--ink-soft); font-size: 13px; line-height: 1.5; }
+
+/* Teachers page: the Add Teacher / Invite Teacher switcher under the page heading. */
+.staff-mode-row { display: flex; gap: 10px; flex-wrap: wrap; margin: 0 0 16px; }
+
+/* Show Teachers toggle: the caret flips while the staff list is open. */
+.staff-toggle { display: inline-flex; align-items: center; gap: 8px; }
+.staff-toggle .caret { display: inline-block; transition: transform .2s ease; }
+.staff-toggle .caret.open { transform: rotate(180deg); }
+
+.form-card { margin-bottom: 16px; }
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0 16px;
+  margin-bottom: 14px;
+}
+
+.plan-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.plan-box {
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  padding: 18px 14px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+}
+
+.plan-box.current { border-color: var(--brand); background: var(--brand-soft); }
+.plan-seats { font-size: 22px; font-weight: 900; color: var(--brand-dark); }
+.plan-name { font-size: 13.5px; font-weight: 700; }
+.plan-price { font-size: 14px; font-weight: 700; }
+.plan-price span { font-size: 11.5px; font-weight: 500; color: var(--ink-soft); }
+
+.code {
+  font-family: monospace;
+  font-size: 14px;
+  letter-spacing: 1px;
+  background: rgba(255, 255, 255, 0.6);
+  padding: 2px 8px;
+  border-radius: 6px;
+  margin: 0 6px;
+}
+
+/* ---------- overview panels ---------- */
+.att-block { padding: 10px 0; border-bottom: 1px solid var(--line); }
+.att-block:last-child { border-bottom: 0; }
+.att-block h4 { margin: 0 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--ink-soft); }
+.att-row { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.schedule-list { display: flex; flex-direction: column; gap: 8px; }
+.schedule-line {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  background: var(--brand-softer); border-radius: 12px; padding: 9px 12px; font-size: 13.5px;
+}
+.schedule-line .mono { color: var(--brand); font-weight: 700; }
+
+/* ---------- staff form ---------- */
+.field.checkbox { flex-direction: row; align-items: center; gap: 8px; font-weight: 600; color: var(--ink-soft); }
+.field.checkbox input { width: 18px; height: 18px; accent-color: var(--brand); }
+
+.subject-picker { margin: 4px 0 16px; }
+
+.quick-actions { flex-wrap: wrap; }

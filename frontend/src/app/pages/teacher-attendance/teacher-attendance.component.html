@@ -1,0 +1,104 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>Staff Attendance</h1>
+      <p class="page-sub">Mark daily attendance for teachers and staff, then review the month.</p>
+    </div>
+    <div class="row-actions">
+      <button class="btn secondary sm" (click)="markAll('present')" [disabled]="!rows.length">Mark all present</button>
+      <button class="btn sm" (click)="save()" [disabled]="saving || !rows.length">
+        {{ saving ? 'Saving…' : 'Save attendance' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="alert error" *ngIf="error">{{ error }}</div>
+  <div class="alert success" *ngIf="notice">{{ notice }}</div>
+
+  <div class="stats">
+    <div class="card"><span>Total Staff</span><strong>{{ summary?.total_teachers ?? staff.length }}</strong></div>
+    <div class="card"><span>Present</span><strong>{{ summary?.present ?? 0 }}</strong></div>
+    <div class="card"><span>Absent</span><strong>{{ summary?.absent ?? 0 }}</strong></div>
+    <div class="card"><span>On Leave</span><strong>{{ summary?.leave ?? 0 }}</strong></div>
+    <div class="card"><span>Late</span><strong>{{ summary?.late ?? 0 }}</strong></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <h3>Daily marking</h3>
+      <label class="field inline">
+        <span>Date</span>
+        <input type="date" [(ngModel)]="date" (change)="onDateChange()" />
+      </label>
+    </div>
+
+    <div class="empty" *ngIf="!rows.length">
+      <strong>No active staff found.</strong><br>
+      Add teachers from the School Admin → Teachers page first.
+    </div>
+
+    <div class="table-scroll" *ngIf="rows.length">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Staff member</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Check in</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of rows">
+            <td>
+              <strong>{{ row.name }}</strong>
+              <div class="hint">{{ row.email }}</div>
+            </td>
+            <td><span class="chip neutral">{{ row.roleLabel }}</span></td>
+            <td>
+              <select class="cell-select" [(ngModel)]="row.status" [class.st-present]="row.status === 'present'"
+                      [class.st-absent]="row.status === 'absent'" [class.st-leave]="row.status === 'leave'"
+                      [class.st-late]="row.status === 'late'">
+                <option *ngFor="let s of statuses" [value]="s">{{ s | titlecase }}</option>
+              </select>
+            </td>
+            <td><input type="time" class="cell-input" [(ngModel)]="row.check_in" /></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <h3>Monthly record</h3>
+      <label class="field inline">
+        <span>Month</span>
+        <input type="month" [(ngModel)]="month" (change)="onMonthChange()" />
+      </label>
+    </div>
+    <div class="empty" *ngIf="!monthRows.length">
+      Pick a month to review saved staff attendance.
+    </div>
+    <div class="table-scroll" *ngIf="monthRows.length">
+      <table class="table">
+        <thead>
+          <tr><th>Date</th><th>Staff member</th><th>Status</th><th>Check in</th><th>Check out</th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let r of monthRows">
+            <td class="mono">{{ r.date }}</td>
+            <td>{{ r.teacher }}</td>
+            <td>
+              <span class="chip" [class.ok]="r.status === 'present'" [class.danger]="r.status === 'absent'"
+                    [class.warn]="r.status === 'late'" [class.neutral]="r.status === 'leave'">
+                {{ r.status | titlecase }}
+              </span>
+            </td>
+            <td>{{ r.check_in || '—' }}</td>
+            <td>{{ r.check_out || '—' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,142 @@
+<app-auth-shell [showMockup]="false">
+
+  <!-- Step 1: choose account type -->
+  <ng-container *ngIf="step === 'choose'">
+    <div class="auth-card wide">
+      <div class="auth-brand">
+        <div class="auth-logo">S</div>
+        <div>
+          <h1>Create your SchoolAssist account</h1>
+          <p>Choose the account type that fits you.</p>
+        </div>
+      </div>
+
+      <div class="choice-grid">
+        <button class="choice-card" (click)="chooseIndividual()">
+          <div class="choice-icon">🧑‍🏫</div>
+          <h3>Individual Teacher</h3>
+          <p>For teachers who want worksheets, tests, marksheets and reports for their own classes. Free to start.</p>
+          <span class="choice-tag">Personal workspace</span>
+        </button>
+
+        <button class="choice-card" (click)="chooseSchool()">
+          <div class="choice-icon">🏫</div>
+          <h3>School / Organization</h3>
+          <p>For school owners. Add classes, invite teachers and pick a teacher-seat plan (25, 30, 50 or 100 accounts).</p>
+          <span class="choice-tag">Multi-teacher · paid plans</span>
+        </button>
+      </div>
+
+      <div class="auth-links">
+        <a routerLink="/login">Already have an account? Log in</a>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- Step 2a: individual teacher -->
+  <ng-container *ngIf="step === 'individual'">
+    <div class="auth-card">
+      <button class="btn ghost sm back-btn" (click)="backToChoose()">← Back</button>
+      <h2>Individual Teacher account</h2>
+      <p class="auth-sub">Your own workspace with classes, worksheets, tests and reports.</p>
+
+      <form (ngSubmit)="submitIndividual()">
+        <label class="field">
+          <span>Full name</span>
+          <input type="text" name="fullName" [(ngModel)]="fullName" placeholder="e.g. Ayesha Khan" />
+        </label>
+        <label class="field">
+          <span>Email</span>
+          <input type="email" name="email" [(ngModel)]="email" autocomplete="email" placeholder="teacher@email.com" />
+        </label>
+        <label class="field">
+          <span>Phone (optional)</span>
+          <input type="tel" name="phone" [(ngModel)]="phone" placeholder="03xx-xxxxxxx" />
+        </label>
+        <label class="field">
+          <span>Password</span>
+          <input type="password" name="password" [(ngModel)]="password" autocomplete="new-password" placeholder="At least 6 characters" />
+        </label>
+        <label class="field">
+          <span>Confirm password</span>
+          <input type="password" name="confirmPassword" [(ngModel)]="confirmPassword" autocomplete="new-password" placeholder="Repeat password" />
+        </label>
+
+        <div class="alert error" *ngIf="error">{{ error }}</div>
+
+        <button class="btn primary block" type="submit" [disabled]="loading">
+          {{ loading ? 'Creating account…' : 'Create teacher account' }}
+        </button>
+      </form>
+    </div>
+  </ng-container>
+
+  <!-- Step 2b: school / organization -->
+  <ng-container *ngIf="step === 'school'">
+    <div class="auth-card wide">
+      <button class="btn ghost sm back-btn" (click)="backToChoose()">← Back</button>
+      <h2>School / Organization account</h2>
+      <p class="auth-sub">
+        You will be the School Owner. Pick a teacher-seat plan now — payment is sandboxed for the MVP,
+        so you can change or confirm it later (JazzCash, Safepay, PayPro or manual invoice).
+      </p>
+
+      <form (ngSubmit)="submitSchool()">
+        <div class="two-col">
+          <label class="field">
+            <span>Owner full name</span>
+            <input type="text" name="fullName" [(ngModel)]="fullName" placeholder="e.g. Muhammad Ahmed" />
+          </label>
+          <label class="field">
+            <span>School name</span>
+            <input type="text" name="schoolName" [(ngModel)]="schoolName" placeholder="e.g. Beacon Public School" />
+          </label>
+          <label class="field">
+            <span>City (optional)</span>
+            <input type="text" name="city" [(ngModel)]="city" placeholder="e.g. Lahore" />
+          </label>
+          <label class="field">
+            <span>Phone (optional)</span>
+            <input type="tel" name="phone" [(ngModel)]="phone" placeholder="03xx-xxxxxxx" />
+          </label>
+          <label class="field">
+            <span>Email</span>
+            <input type="email" name="email" [(ngModel)]="email" autocomplete="email" placeholder="owner@school.pk" />
+          </label>
+          <div class="field-pair">
+            <label class="field">
+              <span>Password</span>
+              <input type="password" name="password" [(ngModel)]="password" autocomplete="new-password" placeholder="At least 6 characters" />
+            </label>
+            <label class="field">
+              <span>Confirm password</span>
+              <input type="password" name="confirmPassword" [(ngModel)]="confirmPassword" autocomplete="new-password" placeholder="Repeat" />
+            </label>
+          </div>
+        </div>
+
+        <h3 class="plans-title">Choose a teacher-seat plan</h3>
+        <div class="plan-grid" *ngIf="plansLoaded">
+          <button
+            *ngFor="let plan of plans"
+            type="button"
+            class="plan-card"
+            [class.selected]="selectedPlanCode === plan.code"
+            (click)="selectPlan(plan.code)">
+            <div class="plan-seats">{{ plan.teacher_seats }} seats</div>
+            <div class="plan-name">{{ plan.name }}</div>
+            <div class="plan-price">PKR {{ plan.price_pkr | number }}<span>/{{ plan.billing_period }}</span></div>
+            <div class="plan-note">teacher accounts included</div>
+          </button>
+        </div>
+        <p class="auth-sub" *ngIf="!plansLoaded">Loading plans…</p>
+
+        <div class="alert error" *ngIf="error">{{ error }}</div>
+
+        <button class="btn primary block" type="submit" [disabled]="loading">
+          {{ loading ? 'Creating school account…' : 'Create school account' }}
+        </button>
+      </form>
+    </div>
+  </ng-container>
+</app-auth-shell>

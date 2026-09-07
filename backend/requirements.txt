@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+SQLAlchemy
+psycopg2-binary
+python-dotenv
+bcrypt
+python-jose[cryptography]
+python-multipart
+pydantic
+email-validator
+openai
+pandas
+openpyxl
+python-docx
+reportlab

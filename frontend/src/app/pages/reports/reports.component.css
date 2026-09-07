@@ -1,0 +1,95 @@
+.form-card { margin-bottom: 16px; }
+
+.search-row { display: flex; gap: 10px; }
+
+.search-row input {
+  flex: 1;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.search-results { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+
+.result-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+}
+
+.result-row:hover { border-color: var(--brand); background: var(--brand-soft); }
+.result-row span { color: var(--ink-soft); font-size: 12.5px; }
+
+.filter-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+.filter-row select {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-family: inherit;
+  font-size: 13.5px;
+  background: #fff;
+}
+
+.threshold { display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--ink-soft); }
+
+.threshold input {
+  width: 70px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-family: inherit;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.stat-box {
+  background: var(--brand-soft);
+  border-radius: 12px;
+  padding: 12px 8px;
+  text-align: center;
+}
+
+.stat-box strong { display: block; font-size: 19px; color: var(--brand-dark); }
+.stat-box span { font-size: 11.5px; color: var(--ink-soft); }
+
+.danger { color: #C0392B; font-weight: 700; }
+
+.chip.fail { background: #FDECEC; color: #B03030; }
+.chip.warn-chip { background: #FFF6E5; color: #9A6B1F; }
+
+.preview-card { border-color: var(--brand); }
+
+.head-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.subject-stats h4 { margin: 16px 0 8px; font-size: 14px; }
+
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.active-row { background: var(--brand-soft); }
+
+/* ---------- school summary ---------- */
+.card { margin-bottom: 16px; }
+
+.grid.cols-2 { margin-bottom: 16px; }
+.grid.cols-2 .card { margin-bottom: 0; }
+
+.bar-cell { min-width: 120px; }
+.bar-cell .progress { display: block; min-width: 100px; }
+
+.card-head .search-box { min-width: 260px; }

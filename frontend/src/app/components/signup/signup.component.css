@@ -1,0 +1,103 @@
+.back-btn { margin-bottom: 12px; }
+
+.choice-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+@media (max-width: 720px) {
+  .choice-grid { grid-template-columns: 1fr; }
+}
+
+.choice-card {
+  text-align: left;
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+  padding: 22px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+
+.choice-card:hover {
+  border-color: var(--brand);
+  box-shadow: var(--shadow);
+  transform: translateY(-2px);
+}
+
+.choice-icon { font-size: 30px; margin-bottom: 10px; }
+
+.choice-card h3 { margin: 0 0 8px; font-size: 17px; }
+
+.choice-card p {
+  margin: 0 0 12px;
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
+.choice-tag {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--brand-dark);
+  background: var(--brand-soft);
+  border-radius: 999px;
+  padding: 4px 12px;
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 16px;
+}
+
+@media (max-width: 640px) {
+  .two-col { grid-template-columns: 1fr; }
+}
+
+.field-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 16px;
+}
+
+@media (max-width: 520px) {
+  .field-pair { grid-template-columns: 1fr; }
+}
+
+.plans-title { margin: 22px 0 12px; font-size: 15.5px; }
+
+.plan-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.plan-card {
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  padding: 16px 12px;
+  text-align: center;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.plan-card:hover { border-color: var(--brand); }
+
+.plan-card.selected {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+  box-shadow: var(--shadow);
+}
+
+.plan-seats { font-size: 21px; font-weight: 900; color: var(--brand-dark); }
+.plan-name { font-size: 13px; font-weight: 700; margin-top: 2px; }
+.plan-price { font-size: 14px; font-weight: 700; margin-top: 6px; }
+.plan-price span { font-size: 11.5px; font-weight: 500; color: var(--ink-soft); }
+.plan-note { font-size: 11.5px; color: var(--ink-soft); margin-top: 4px; }

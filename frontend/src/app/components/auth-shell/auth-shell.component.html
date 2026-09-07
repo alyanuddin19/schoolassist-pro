@@ -1,0 +1,112 @@
+<div class="auth-shell" [class.no-mock]="!showMockup">
+  <header class="shell-top">
+    <div class="top-brand">
+      <div class="top-logo">S</div>
+      <span class="top-name">SchoolAssist</span>
+    </div>
+  </header>
+
+  <div class="shell-grid">
+    <!-- Left: marketing hero -->
+    <section class="hero">
+      <span class="hero-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 9 9-5 9 5-9 5-9-5Z"/><path d="M7 11.2V16c2.8 1.8 7.2 1.8 10 0v-4.8"/></svg> Empowering Education</span>
+      <h1 class="hero-title">Teach. Inspire.<br /><span>Transform.</span></h1>
+      <p class="hero-text">
+        SchoolAssist is the all-in-one platform designed for schools and
+        teachers in Pakistan to manage classes, engage students, and achieve
+        more.
+      </p>
+
+      <div class="hero-features">
+        <div class="feature">
+          <div class="feature-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.3"/><path d="M3.5 19c.5-3.3 2.5-5 5.5-5s5 1.7 5.5 5M15 15c2.8.2 4.5 1.5 5 4"/></svg></div>
+          <div>
+            <strong>For Teachers</strong>
+            <p>Manage classes, assignments and student progress.</p>
+          </div>
+        </div>
+        <div class="feature">
+          <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M3 20h18M5 20V9l7-5 7 5v11M9 20v-5h6v5M8 10h.01M12 10h.01M16 10h.01"/></svg></div>
+          <div>
+            <strong>For Schools</strong>
+            <p>Streamline operations and empower your staff.</p>
+          </div>
+        </div>
+        <div class="feature">
+          <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M12 3 19 6v5c0 4.5-3 7.7-7 10-4-2.3-7-5.5-7-10V6l7-3Z"/><path d="m8.8 12 2.1 2.1 4.3-4.4"/></svg></div>
+          <div>
+            <strong>Secure &amp; Reliable</strong>
+            <p>Your data is protected with enterprise-grade security.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Centre: the page's own card -->
+    <div class="shell-card">
+      <ng-content></ng-content>
+    </div>
+
+    <!-- Right: decorative dashboard preview (static, no live data) -->
+    <section class="mock" *ngIf="showMockup" aria-hidden="true">
+      <div class="mock-card">
+        <div class="mock-side">
+          <span class="mock-logo">S</span>
+          <span class="mock-nav">○</span><span class="mock-nav">□</span><span class="mock-nav">△</span><span class="mock-nav">◇</span><span class="mock-nav">+</span>
+        </div>
+        <div class="mock-body">
+          <div class="mock-head">
+            <span>Dashboard</span>
+            <span class="mock-avatar"></span>
+          </div>
+          <div class="mock-stats">
+            <div class="mock-stat"><small>Total Classes</small><strong>24</strong></div>
+            <div class="mock-stat"><small>Students</small><strong>532</strong></div>
+            <div class="mock-stat"><small>Assignments</small><strong>18</strong></div>
+          </div>
+          <div class="mock-rows">
+            <div class="mock-col">
+              <small class="mock-label">Recent Activity</small>
+              <div class="mock-item">
+                <span class="mock-ico">✓</span>
+                <div><strong>Chapter 5 Quiz</strong><small>Science · Class 8A</small></div>
+                <small class="mock-time">2h ago</small>
+              </div>
+              <div class="mock-item">
+                <span class="mock-ico">≡</span>
+                <div><strong>Homework Assigned</strong><small>Math · Class 7B</small></div>
+                <small class="mock-time">5h ago</small>
+              </div>
+              <div class="mock-item">
+                <span class="mock-ico">!</span>
+                <div><strong>New Announcement</strong><small>General</small></div>
+                <small class="mock-time">1d ago</small>
+              </div>
+            </div>
+            <div class="mock-col">
+              <small class="mock-label">Attendance Overview</small>
+              <svg class="mock-chart" viewBox="0 0 200 80" preserveAspectRatio="none">
+                <polyline
+                  points="0,58 28,34 56,50 84,18 112,44 140,26 168,52 200,36"
+                  fill="none" stroke="#7c96ea" stroke-width="2.5"
+                  stroke-linecap="round" stroke-linejoin="round" />
+                <circle cx="84" cy="18" r="3.5" fill="#3158d8" />
+                <circle cx="168" cy="52" r="3.5" fill="#3158d8" />
+              </svg>
+              <div class="mock-days">
+                <small>Mon</small><small>Tue</small><small>Wed</small>
+                <small>Thu</small><small>Fri</small><small>Sat</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Single, continuous organic background accent -->
+  <svg class="wave" viewBox="0 0 660 270" preserveAspectRatio="none" aria-hidden="true">
+    <defs><linearGradient id="waveSoft" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#dce8ff"/><stop offset="1" stop-color="#3158d8"/></linearGradient></defs>
+    <path d="M-55 233 C76 145 168 259 307 206 C440 156 480 89 679 2 L679 286 L-55 286 Z" fill="url(#waveSoft)" opacity=".84" />
+  </svg>
+</div>

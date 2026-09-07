@@ -1,0 +1,107 @@
+<div class="page">
+
+  <div class="page-head">
+    <div>
+      <h1>Assalam-o-Alaikum, {{ firstName }} 👋</h1>
+      <p class="page-sub">Here is your teaching snapshot for {{ data?.organization?.name || 'your workspace' }}.</p>
+    </div>
+    <button class="btn primary" routerLink="/worksheets">+ Generate worksheet</button>
+  </div>
+
+  <div class="alert error" *ngIf="error">{{ error }}</div>
+
+  <div class="loading" *ngIf="loading">Loading dashboard…</div>
+
+  <ng-container *ngIf="!loading && data">
+    <div class="stat-grid">
+      <div class="stat-card" *ngFor="let stat of statEntries">
+        <div class="stat-icon">{{ stat.icon }}</div>
+        <div>
+          <div class="stat-value">{{ stat.value }}</div>
+          <div class="stat-label">{{ stat.label }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head">
+          <h3>My Teaching Assignments</h3>
+          <a routerLink="/setup" class="link">Manage</a>
+        </div>
+        <p class="empty" *ngIf="!data.assignments?.length">
+          No class-subject assignments yet. Set up your classes in Class &amp; Student Setup.
+        </p>
+        <table class="table" *ngIf="data.assignments?.length">
+          <thead>
+            <tr><th>Class</th><th>Subject</th><th>Academic Year</th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let a of data.assignments">
+              <td>{{ a.class }}</td>
+              <td>{{ a.subject }}</td>
+              <td>{{ a.academic_year || '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h3>Recent Worksheets</h3>
+          <a routerLink="/worksheets" class="link">View all</a>
+        </div>
+        <p class="empty" *ngIf="!data.recent_worksheets?.length">
+          No worksheets yet. Ask the AI assistant: "Generate a worksheet for Class 5 Science on digestion."
+        </p>
+        <ul class="item-list" *ngIf="data.recent_worksheets?.length">
+          <li *ngFor="let w of data.recent_worksheets">
+            <div>
+              <strong>{{ w.title }}</strong>
+              <small>{{ w.class }} · {{ w.subject }}</small>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head">
+          <h3>Recent Tests</h3>
+          <a routerLink="/tests" class="link">View all</a>
+        </div>
+        <p class="empty" *ngIf="!data.recent_tests?.length">
+          No tests yet. Generate weekly, monthly or term exams from Tests &amp; Papers.
+        </p>
+        <ul class="item-list" *ngIf="data.recent_tests?.length">
+          <li *ngFor="let t of data.recent_tests">
+            <div>
+              <strong>{{ t.title }}</strong>
+              <small>{{ t.class }} · {{ t.subject }} · {{ t.test_type }}</small>
+            </div>
+            <span class="chip" *ngIf="t.total_marks">{{ t.total_marks }} marks</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h3>Recent Marksheets</h3>
+          <a routerLink="/marksheets" class="link">View all</a>
+        </div>
+        <p class="empty" *ngIf="!data.recent_marksheets?.length">
+          No marksheets yet. Upload marks from Excel or CSV in the Marksheets page.
+        </p>
+        <ul class="item-list" *ngIf="data.recent_marksheets?.length">
+          <li *ngFor="let m of data.recent_marksheets">
+            <div>
+              <strong>{{ m.title }}</strong>
+              <small>{{ m.class }} · {{ m.subject }}</small>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </ng-container>
+</div>

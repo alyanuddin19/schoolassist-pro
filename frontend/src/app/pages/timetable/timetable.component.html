@@ -1,0 +1,81 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>Timetable</h1>
+      <p class="page-sub">{{ isPrincipal ? 'Review class timetables submitted by the coordinator.' : 'Weekly class schedule. Coordinators create and submit it for Principal review.' }}</p>
+    </div>
+  </div>
+
+  <div class="alert error" *ngIf="error">{{ error }}</div>
+  <div class="alert success" *ngIf="notice">{{ notice }}</div>
+
+  <ng-container *ngIf="!isPrincipal"><div class="card">
+    <div class="filters">
+      <label class="field">
+        <span>Class</span>
+        <select [(ngModel)]="classId" (change)="onClassChange()">
+          <option [ngValue]="null">Select class</option>
+          <option *ngFor="let c of classes" [ngValue]="c.id">{{ c.name }}</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Section</span>
+        <select [(ngModel)]="sectionId" (change)="onSectionChange()">
+          <option [ngValue]="null">All sections</option>
+          <option *ngFor="let s of selectedClass?.sections || []" [ngValue]="s.id">{{ s.name }}</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="alert info" *ngIf="!canEdit">
+      You have view-only access. The weekly timetable is created by the coordinator.
+    </div>
+
+    <div class="form-grid" *ngIf="canEdit && classId">
+      <label class="field"><span>Day</span>
+        <select [(ngModel)]="day">
+          <option *ngFor="let d of days" [value]="d">{{ d }}</option>
+        </select>
+      </label>
+      <label class="field"><span>Start time</span><input type="time" [(ngModel)]="start" /></label>
+      <label class="field"><span>End time</span><input type="time" [(ngModel)]="end" /></label>
+      <label class="field"><span>Subject</span>
+        <select [(ngModel)]="subjectId" (change)="onSubjectChange()">
+          <option [ngValue]="null">Select subject</option>
+          <option *ngFor="let s of subjects" [ngValue]="s.id">{{ s.name }}</option>
+        </select>
+      </label>
+      <label class="field"><span>Teacher</span>
+        <select [(ngModel)]="teacherId">
+          <option [ngValue]="null">Unassigned</option>
+          <optgroup label="Assigned to this class &amp; subject" *ngIf="assignedTeachers.length">
+            <option *ngFor="let t of assignedTeachers" [ngValue]="t.id">{{ t.name }}</option>
+          </optgroup>
+          <optgroup label="Other staff" *ngIf="otherTeachers.length">
+            <option *ngFor="let t of otherTeachers" [ngValue]="t.id">{{ t.name }}</option>
+          </optgroup>
+        </select>
+      </label>
+      <div class="field actions"><button class="btn primary" (click)="addPeriod()" [disabled]="saving">+ Add period</button></div>
+    </div>
+  </div>
+
+  <div class="card" *ngIf="classId">
+    <div class="card-head"><h3>Weekly plan · {{ selectedClass?.name }}<span *ngIf="sectionId"> · section {{ selectedSectionName }}</span></h3></div>
+    <p class="empty" *ngIf="!entries.length">No timetable created yet for this class.</p>
+    <div class="timetable-week" *ngIf="entries.length">
+      <div class="tt-day" *ngFor="let d of days">
+        <div class="tt-day-head">{{ d }}</div>
+        <div class="tt-slot" *ngFor="let e of entriesFor(d)">
+          <div class="tt-time">{{ e.start_time }} – {{ e.end_time }}</div>
+          <div class="tt-subject">{{ e.subject }}</div>
+          <div class="tt-teacher">{{ e.teacher || 'Unassigned' }}<span *ngIf="e.section"> · {{ e.section }}</span></div>
+          <button class="tt-del" *ngIf="canEdit" (click)="remove(e)" aria-label="Remove period">×</button>
+        </div>
+        <div class="tt-empty" *ngIf="!entriesFor(d).length">—</div>
+      </div>
+    </div>
+  </div>
+  </ng-container>
+  <ng-container *ngIf="isPrincipal"><div class="card" *ngFor="let plan of principalPlans"><div class="card-head"><h3>Weekly plan · {{ plan.class.name }}</h3></div><p class="empty" *ngIf="!plan.entries.length">No timetable submitted for this class.</p><div class="timetable-week" *ngIf="plan.entries.length"><div class="tt-day" *ngFor="let d of days"><div class="tt-day-head">{{d}}</div><div class="tt-slot" *ngFor="let e of planEntries(plan,d)"><div class="tt-time">{{e.start_time}} – {{e.end_time}}</div><div class="tt-subject">{{e.subject}}</div><div class="tt-teacher">{{e.teacher || 'Unassigned'}}<span *ngIf="e.section"> · {{e.section}}</span></div></div><div class="tt-empty" *ngIf="!planEntries(plan,d).length">—</div></div></div><label class="field comment"><span>Comment for coordinator</span><textarea [(ngModel)]="plan.comment" [name]="'comment'+plan.class.id" placeholder="Add approval or requested changes"></textarea></label><div class="actions"><button class="btn primary" (click)="decidePlan(plan,true)">Approve</button><button class="btn secondary" (click)="decidePlan(plan,false)">Reject / Return with changes</button></div></div></ng-container>
+</div>

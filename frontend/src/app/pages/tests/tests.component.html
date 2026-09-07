@@ -1,0 +1,168 @@
+<div class="page">
+
+  <div class="page-head">
+    <div>
+      <h1>Tests &amp; Papers</h1>
+      <p class="page-sub">Weekly tests, monthly tests, mid term and final term papers with answer keys.</p>
+    </div>
+  </div>
+
+  <div class="alert error" *ngIf="error">{{ error }}</div>
+  <div class="alert success" *ngIf="notice">{{ notice }}</div>
+  <div class="loading" *ngIf="loading">Loading…</div>
+
+  <!-- Generator -->
+  <div class="card form-card">
+    <div class="card-head"><h3>New Test Paper</h3></div>
+    <div class="form-grid">
+      <label class="field">
+        <span>Test type</span>
+        <select [(ngModel)]="testType" (change)="onTestTypeChange()">
+          <option value="weekly">Weekly Test</option>
+          <option value="monthly">Monthly Test</option>
+          <option value="mid_term">Mid Term</option>
+          <option value="final_term">Final Term / Term Exam</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Class</span>
+        <select [(ngModel)]="classId" (change)="onClassChange()">
+          <option *ngFor="let c of classes" [value]="c.id">{{ c.name }}</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Section (optional)</span>
+        <select [(ngModel)]="sectionId">
+          <option [value]="null">— whole class —</option>
+          <option *ngFor="let s of sectionsForClass" [value]="s.id">{{ s.name }}</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Subject</span>
+        <select [(ngModel)]="subjectId">
+          <option *ngFor="let s of subjects" [value]="s.id">{{ s.name }}</option>
+        </select>
+      </label>
+      <label class="field wide">
+        <span>Topic / syllabus (optional)</span>
+        <input type="text" [(ngModel)]="topic" placeholder="e.g. grammar, chapters 1-3" />
+      </label>
+      <label class="field">
+        <span>Title (optional)</span>
+        <input type="text" [(ngModel)]="title" placeholder="e.g. English Weekly Test 4" />
+      </label>
+      <label class="field">
+        <span>Total marks</span>
+        <input type="number" [(ngModel)]="totalMarks" min="5" max="300" />
+      </label>
+      <label class="field">
+        <span>Duration (minutes)</span>
+        <input type="number" [(ngModel)]="durationMinutes" min="5" max="240" />
+      </label>
+      <label class="field">
+        <span>Difficulty</span>
+        <select [(ngModel)]="difficulty">
+          <option value="easy">Easy</option>
+          <option value="medium">Medium</option>
+          <option value="hard">Hard</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Language</span>
+        <select [(ngModel)]="language">
+          <option value="en">English</option>
+          <option value="ur">اردو Urdu</option>
+          <option value="roman_urdu">Roman Urdu</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>MCQs</span>
+        <input type="number" [(ngModel)]="mcq" min="0" max="30" />
+      </label>
+      <label class="field">
+        <span>Short questions</span>
+        <input type="number" [(ngModel)]="short" min="0" max="20" />
+      </label>
+      <label class="field">
+        <span>Long questions</span>
+        <input type="number" [(ngModel)]="long" min="0" max="10" />
+      </label>
+      <label class="field wide">
+        <span>Instructions (optional)</span>
+        <input type="text" [(ngModel)]="instructions" placeholder="e.g. Attempt all questions" />
+      </label>
+    </div>
+    <button class="btn primary" (click)="generate()" [disabled]="generating">
+      {{ generating ? 'Generating with Qwen AI…' : '✨ Generate test paper' }}
+    </button>
+  </div>
+
+  <!-- Preview -->
+  <div class="card preview-card" *ngIf="preview">
+    <div class="card-head">
+      <h3>{{ preview.title }}</h3>
+      <div class="head-actions">
+        <span class="chip">{{ typeLabel(preview.test_type) }}</span>
+        <button class="btn secondary sm" (click)="exportTest('pdf')">⬇ PDF</button>
+        <button class="btn secondary sm" (click)="exportTest('docx')">⬇ DOCX</button>
+        <button class="btn danger sm" (click)="deleteTest(preview.id)">Delete</button>
+        <button class="btn ghost sm" (click)="closePreview()">✕</button>
+      </div>
+    </div>
+    <p class="preview-meta">
+      {{ preview.class }}<span *ngIf="preview.section"> · {{ preview.section }}</span> ·
+      {{ preview.subject }}<span *ngIf="preview.topic"> · {{ preview.topic }}</span> ·
+      {{ preview.total_marks }} marks<span *ngIf="preview.duration_minutes"> · {{ preview.duration_minutes }} min</span> ·
+      {{ preview.language }}
+    </p>
+    <div class="tabs small">
+      <button class="tab" [class.active]="previewTab === 'content'" (click)="setPreviewTab('content')">Question Paper</button>
+      <button class="tab" [class.active]="previewTab === 'answer'" (click)="setPreviewTab('answer')">Answer Key</button>
+      <button class="tab" [class.active]="previewTab === 'scheme'" (click)="setPreviewTab('scheme')">Marking Scheme</button>
+    </div>
+    <pre class="doc-preview">{{ previewTab === 'content' ? preview.content : previewTab === 'answer' ? preview.answer_key : preview.marking_scheme }}</pre>
+  </div>
+
+  <!-- List -->
+  <div class="card">
+    <div class="card-head">
+      <h3>Saved Tests</h3>
+      <div class="filters">
+        <select [(ngModel)]="filterClassId" (change)="loadList()">
+          <option [value]="null">All classes</option>
+          <option *ngFor="let c of classes" [value]="c.id">{{ c.name }}</option>
+        </select>
+        <select [(ngModel)]="filterSubjectId" (change)="loadList()">
+          <option [value]="null">All subjects</option>
+          <option *ngFor="let s of allSubjects" [value]="s.id">{{ s.name }}</option>
+        </select>
+        <select [(ngModel)]="filterTestType" (change)="loadList()">
+          <option value="">All types</option>
+          <option value="weekly">Weekly</option>
+          <option value="monthly">Monthly</option>
+          <option value="mid_term">Mid Term</option>
+          <option value="final_term">Final Term</option>
+        </select>
+      </div>
+    </div>
+    <p class="empty" *ngIf="!tests.length">No tests yet — generate your first paper above.</p>
+    <div class="table-scroll" *ngIf="tests.length">
+      <table class="table">
+        <thead>
+          <tr><th>Title</th><th>Type</th><th>Class</th><th>Subject</th><th>Marks</th><th>Created</th><th></th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let t of tests" [class.active-row]="preview?.id === t.id">
+            <td><strong>{{ t.title }}</strong></td>
+            <td><span class="chip">{{ typeLabel(t.test_type) }}</span></td>
+            <td>{{ t.class }}</td>
+            <td>{{ t.subject }}</td>
+            <td>{{ t.total_marks || '—' }}</td>
+            <td>{{ t.created_at | date: 'mediumDate' }}</td>
+            <td><button class="btn secondary sm" (click)="openTest(t.id)">Open</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

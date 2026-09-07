@@ -1,0 +1,304 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>Exam Management</h1>
+      <p class="page-sub">Exam timetables, examination rooms and automatic seating plans.</p>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab" [class.active]="tab === 'timetable'" (click)="tab = 'timetable'">Exam Timetable</button>
+    <button class="tab" [class.active]="tab === 'seating'" (click)="tab = 'seating'">Rooms &amp; Seating Plan</button>
+  </div>
+
+  <div class="alert error" *ngIf="error">{{ error }}</div>
+  <div class="alert success" *ngIf="notice">{{ notice }}</div>
+
+  <!-- ================= Exam timetable ================= -->
+  <ng-container *ngIf="tab === 'timetable'">
+    <div class="card" *ngIf="allExams.length">
+      <div class="card-head"><h3>All Exam Timetables</h3></div>
+      <div class="table-scroll"><table class="table"><thead><tr><th>Exam / Term</th><th>Class</th><th>Date</th><th>Subject</th><th>Time</th></tr></thead><tbody><tr *ngFor="let exam of allExams"><td><strong>{{ exam.term }}</strong></td><td>{{ exam.class }}</td><td>{{ exam.date }}</td><td>{{ exam.subject }}</td><td>{{ exam.start_time }} – {{ exam.end_time }}</td></tr></tbody></table></div>
+    </div>
+    <div class="card form-card no-print">
+      <div class="card-head"><h3>Create exam timetable</h3></div>
+      <div class="form-grid">
+        <label class="field">
+          <span>Exam / Term</span>
+          <input type="text" [(ngModel)]="term" (change)="onTermChange()" list="term-options" placeholder="e.g. Mid Term" />
+          <datalist id="term-options">
+            <option *ngFor="let t of terms" [value]="t"></option>
+          </datalist>
+        </label>
+        <label class="field">
+          <span>School level</span>
+          <select [(ngModel)]="levelFilter" (change)="onLevelChange()">
+            <option value="all">Primary &amp; Secondary</option>
+            <option value="primary">Primary (1-5)</option>
+            <option value="secondary">Secondary (6-10)</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Grade / Class</span>
+          <select [(ngModel)]="classId" (change)="onClassChange()">
+            <option [ngValue]="null">Select class</option>
+            <option *ngFor="let c of levelClasses" [ngValue]="c.id">{{ c.name }}</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="empty" *ngIf="classId && loaded && !rows.length">
+        No subjects are assigned to this class yet. Assign subjects from Class &amp; Student Setup.
+      </div>
+
+      <div class="table-scroll" *ngIf="rows.length">
+        <table class="table">
+          <thead>
+            <tr><th>Subject</th><th>Exam date</th><th>Day</th><th>Start time</th><th>End time</th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of rows">
+              <td><strong>{{ row.subject }}</strong></td>
+              <td><input type="date" class="cell-input" [(ngModel)]="row.date" /></td>
+              <td>{{ day(row.date) }}</td>
+              <td><input type="time" class="cell-input" [(ngModel)]="row.start" /></td>
+              <td><input type="time" class="cell-input" [(ngModel)]="row.end" /></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="row-actions" *ngIf="rows.length">
+        <button class="btn" (click)="saveTimetable()" [disabled]="saving">
+          {{ saving ? 'Saving…' : 'Save exam timetable' }}
+        </button>
+        <span class="hint">Saving replaces the previous timetable for this term and class.</span>
+      </div>
+    </div>
+
+    <div class="card" *ngIf="savedExams.length">
+      <div class="card-head">
+        <h3>{{ term }} · {{ classLabel }}</h3>
+        <button class="btn secondary sm" (click)="printSeating()">Print</button>
+      </div>
+      <div class="table-scroll">
+        <table class="table">
+          <thead>
+            <tr><th>Date</th><th>Day</th><th>Subject</th><th>Time</th><th></th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let exam of savedExams">
+              <td class="mono">{{ exam.date }}</td>
+              <td>{{ exam.day }}</td>
+              <td><strong>{{ exam.subject }}</strong></td>
+              <td>{{ exam.start_time }} – {{ exam.end_time }}</td>
+              <td><button class="btn danger sm" (click)="removeExam(exam)">Remove</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ================= Rooms & seating ================= -->
+  <ng-container *ngIf="tab === 'seating'">
+    <div class="card form-card no-print">
+      <div class="card-head">
+        <h3>Step 1–2 · Examination rooms</h3>
+        <span class="chip">Total capacity {{ totalCapacity }} seats</span>
+      </div>
+      <div class="filters">
+        <label class="field">
+          <span>Room name / number</span>
+          <input type="text" [(ngModel)]="roomName" placeholder="e.g. Room 101" />
+        </label>
+        <label class="field">
+          <span>Capacity</span>
+          <input type="number" min="1" [(ngModel)]="roomCapacity" />
+        </label>
+        <button class="btn secondary" (click)="addRoom()">+ Add room</button>
+      </div>
+      <div class="empty" *ngIf="!rooms.length">
+        <strong>No rooms configured yet.</strong><br>
+        Add the rooms (with seat capacity) you will use for examinations.
+      </div>
+      <div class="table-scroll" *ngIf="rooms.length">
+        <table class="table">
+          <thead><tr><th>Room</th><th>Capacity</th><th>Edit</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let room of rooms">
+              <td><input type="text" class="cell-input room-name-input" [(ngModel)]="room.name" placeholder="Room name" /></td>
+              <td><input type="number" min="1" class="cell-input capacity-input" [(ngModel)]="room.capacity" /> seats</td>
+              <td class="room-edit-actions">
+                <button class="btn secondary sm" (click)="saveRoom(room)">Save</button>
+                <button class="btn danger sm" (click)="removeRoom(room)">Remove</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="muted" *ngIf="rooms.length">
+        Edit a room's name or capacity yourself, then press Save — the allocation below re-checks automatically.
+      </p>
+    </div>
+
+    <!-- Step 3: how the classes fill each room, before anything is saved -->
+    <div class="card form-card no-print">
+      <div class="card-head">
+        <h3>Step 3 · Auto room allocation</h3>
+        <div class="row-actions">
+          <span class="chip neutral" *ngIf="preview">{{ preview.students }} students · {{ preview.capacity }} seats</span>
+          <button class="btn secondary sm" (click)="loadPreview()" [disabled]="previewing || !rooms.length">
+            {{ previewing ? 'Checking…' : 'Re-check' }}
+          </button>
+        </div>
+      </div>
+      <div class="form-grid">
+        <label class="field">
+          <span>Exam / Term</span>
+          <input type="text" [(ngModel)]="term" (change)="onTermChange()" list="term-options-2" placeholder="e.g. Mid Term" />
+          <datalist id="term-options-2">
+            <option *ngFor="let t of terms" [value]="t"></option>
+          </datalist>
+        </label>
+        <label class="field">
+          <span>School level</span>
+          <select [(ngModel)]="levelFilter" (change)="onLevelChange()">
+            <option value="all">Primary &amp; Secondary</option>
+            <option value="primary">Primary (1-5)</option>
+            <option value="secondary">Secondary (6-10)</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Grade / Class</span>
+          <select [(ngModel)]="classId" (change)="onClassChange()">
+            <option [ngValue]="null">{{ allClassesOption }}</option>
+            <option *ngFor="let c of levelClasses" [ngValue]="c.id">{{ c.name }}</option>
+          </select>
+        </label>
+      </div>
+      <div class="filters">
+        <label class="field">
+          <span>Classes in one room</span>
+          <select [(ngModel)]="classesPerRoom" (ngModelChange)="onPerRoomChange()">
+            <option [ngValue]="null">Mix all classes</option>
+            <option *ngFor="let n of perRoomChoices" [ngValue]="n">
+              {{ n }} class{{ n === 1 ? '' : 'es' }} per room
+            </option>
+          </select>
+        </label>
+      </div>
+      <p class="muted">
+        {{ classLabel }} · {{ students.length }} active students · rooms hold {{ totalCapacity }} seats.
+        Pick the exam term and how many different classes may share a room and the system allocates the
+        rest itself, in roll-number order: no class is ever parked whole in one room while another class
+        is still waiting, every class is spread across the rooms as evenly as possible, each room mixes
+        two or more classes whenever it can, and no room goes past its capacity. When a class's seats in
+        a room are filled, it continues in the next room. Nothing is saved until you press Generate.
+      </p>
+      <p class="muted rule-line">
+        <strong>Priority rule:</strong> First maximize class mixing, then maximize room utilization.
+      </p>
+
+      <div class="alert warn" *ngIf="preview && preview.unseated > 0">
+        {{ preview.unseated }} of {{ preview.students }} students cannot be seated — the rooms hold
+        {{ preview.capacity }} seats. Add a room or increase a capacity, then re-check.
+      </div>
+
+      <div class="empty" *ngIf="!rooms.length">
+        Add the examination rooms above and the room-wise allocation appears here.
+      </div>
+      <div class="empty" *ngIf="preview && rooms.length && !preview.rooms.length">
+        <strong>No students to allocate.</strong><br>
+        This selection has no active students yet.
+      </div>
+
+      <div class="room-grid" *ngIf="preview && preview.rooms.length">
+        <div class="room-box" *ngFor="let room of preview.rooms">
+          <div class="room-head">
+            <strong>{{ room.room }}</strong>
+            <span class="chip" [class.ok]="room.total >= room.capacity" [class.neutral]="room.total < room.capacity">
+              {{ room.total }} / {{ room.capacity }}
+            </span>
+          </div>
+          <small class="muted">Capacity {{ room.capacity }}</small>
+          <span class="progress">
+            <span [style.width.%]="fillPercent(room)" [class.full]="room.total >= room.capacity"></span>
+          </span>
+          <table class="table room-table">
+            <thead><tr><th>Class</th><th>Students allocated</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let line of room.classes">
+                <td>{{ line.class }}</td>
+                <td>{{ line.students }}</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td><strong>Total</strong></td>
+                <td><strong>{{ room.total }} / {{ room.capacity }}</strong></td>
+              </tr>
+              <tr>
+                <td>Seats used</td>
+                <td>{{ room.total }}</td>
+              </tr>
+              <tr>
+                <td>Remaining seats</td>
+                <td>{{ room.capacity - room.total }}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+      <div class="row-actions">
+        <button class="btn" (click)="generateSeating()" [disabled]="generating">
+          {{ generating ? 'Allocating…' : 'Generate seating plan' }}
+        </button>
+        <button class="btn secondary sm" (click)="loadSeating()" [disabled]="!term">Reload final sheet</button>
+      </div>
+    </div>
+
+    <!-- Step 4: the saved plan, room by room — only after Generate -->
+    <div class="card" *ngIf="seating.rows.length">
+      <div class="card-head">
+        <h3>Step 4 · Final seating plan · {{ term }} · {{ classLabel }}</h3>
+        <div class="row-actions">
+          <span class="chip neutral" *ngIf="seating.plan && seating.plan.level">
+            {{ seating.plan.level === 'primary' ? 'Primary' : 'Secondary' }}
+          </span>
+          <span class="chip neutral" *ngIf="seating.plan && seating.plan.classes_per_room">
+            {{ seating.plan.classes_per_room }} classes per room
+          </span>
+          <button class="btn secondary sm" (click)="printSeating()">Print</button>
+          <button class="btn secondary sm" (click)="downloadSeatingPdf()">Download PDF</button>
+          <button class="btn secondary sm" (click)="downloadSeating()">Download CSV</button>
+        </div>
+      </div>
+
+      <div class="room-plan" *ngFor="let group of seatingRooms">
+        <div class="room-plan-head">
+          <strong>{{ group.room }}</strong>
+          <span class="chip">{{ group.seats }} / {{ group.capacity }} seats</span>
+        </div>
+        <div class="roll-ranges">
+          <span class="chip neutral" *ngFor="let range of group.ranges">
+            {{ range.class }} · Roll no. {{ range.roll_from }}–{{ range.roll_to }} ({{ range.students }})
+          </span>
+        </div>
+        <div class="table-scroll">
+          <table class="table">
+            <thead><tr><th>Seat no.</th><th>Roll no.</th><th>Student</th><th>Class</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let row of group.rows">
+                <td>{{ row.seat_no }}</td>
+                <td class="mono">{{ row.roll_no }}</td>
+                <td><strong>{{ row.student }}</strong></td>
+                <td>{{ row.class || '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</div>

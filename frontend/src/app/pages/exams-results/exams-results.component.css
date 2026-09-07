@@ -1,0 +1,77 @@
+.form-card { margin-bottom: 16px; }
+
+.filters .btn { margin-bottom: 1px; }
+
+.row-actions { margin-top: 14px; }
+
+.hint { align-self: center; }
+
+/* ---------- editable rooms table ---------- */
+.room-name-input { width: 100%; min-width: 140px; }
+.capacity-input { width: 78px; }
+.room-edit-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* ---------- room-wise allocation (preview) ---------- */
+.room-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.room-box {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.room-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.room-head strong { font-size: 15px; color: var(--brand-deep); }
+
+.room-box > small { display: block; margin: 2px 0 8px; }
+
+.room-box .progress { display: block; margin-bottom: 12px; }
+
+/* Compact class/seat table inside a room box. */
+.room-table th { padding: 6px 8px; }
+.room-table td { padding: 7px 8px; }
+.room-table tfoot td { border-bottom: none; }
+.room-table tfoot tr:first-child td {
+  border-top: 2px solid var(--line);
+  padding-top: 9px;
+}
+
+/* The mixing-first priority rule under the step 3 description. */
+.rule-line { margin-top: -4px; }
+.rule-line strong { color: var(--brand-deep); }
+
+/* ---------- final plan, room by room ---------- */
+.room-plan { padding: 14px 0; }
+.room-plan + .room-plan { border-top: 1px dashed var(--line); }
+.room-plan:first-of-type { padding-top: 4px; }
+
+.room-plan-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.room-plan-head strong { font-size: 15.5px; color: var(--brand-deep); }
+
+.roll-ranges { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+
+/* ---------- print: only the final seating plan ---------- */
+@media print {
+  .tabs, .no-print { display: none !important; }
+  .room-plan { break-inside: avoid; }
+}

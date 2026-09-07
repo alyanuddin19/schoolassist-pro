@@ -1,0 +1,384 @@
+<div class="page">
+
+  <div class="page-head">
+    <div>
+      <h1>Reports</h1>
+      <p class="page-sub">Student-wise analysis, subject reports, weak students and final term results.</p>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab" [class.active]="tab === 'student'" (click)="setTab('student')">Student Report</button>
+    <button class="tab" [class.active]="tab === 'subject'" (click)="setTab('subject')">Subject Report</button>
+    <button class="tab" [class.active]="tab === 'weak'" (click)="setTab('weak')">Weak Students</button>
+    <button class="tab" [class.active]="tab === 'final'" (click)="setTab('final')">Final Term Reports</button>
+    <button class="tab" *ngIf="canViewSummary" [class.active]="tab === 'summary'" (click)="setTab('summary')">School Summary</button>
+  </div>
+
+  <div class="alert error" *ngIf="error">{{ error }}</div>
+  <div class="loading" *ngIf="loading">Loading…</div>
+
+  <!-- ============ Student report ============ -->
+  <ng-container *ngIf="tab === 'student'">
+    <div class="card form-card">
+      <div class="card-head"><h3>Find a Student</h3></div>
+      <div class="search-row">
+        <input
+          type="text"
+          [(ngModel)]="searchQuery"
+          (keyup.enter)="searchStudents()"
+          placeholder="Type student name, e.g. Ali Raza" />
+        <button class="btn primary" (click)="searchStudents()">Search</button>
+      </div>
+      <div class="search-results" *ngIf="searchResults.length">
+        <button class="result-row" *ngFor="let s of searchResults" (click)="openStudentReport(s)">
+          <strong>{{ s.name }}</strong>
+          <span>{{ s.class }}<ng-container *ngIf="s.section"> · {{ s.section }}</ng-container> · Roll {{ s.roll_no }}</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="card" *ngIf="studentReport">
+      <div class="card-head">
+        <h3>{{ studentReport.student.name }} — Subject-wise Report</h3>
+        <span class="chip">{{ studentReport.student.class }} · Roll {{ studentReport.student.roll_no }}</span>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-box"><strong>{{ studentReport.overall_percent }}%</strong><span>Overall</span></div>
+        <div class="stat-box"><strong>{{ studentReport.overall_grade }}</strong><span>Grade</span></div>
+        <div class="stat-box"><strong>{{ studentReport.assessment_count }}</strong><span>Assessments</span></div>
+        <div class="stat-box"><strong>{{ studentReport.subjects.length || 0 }}</strong><span>Subjects</span></div>
+      </div>
+      <div class="table-scroll" *ngIf="studentReport.subjects?.length">
+        <table class="table">
+          <thead>
+            <tr><th>Subject</th><th>Assessments</th><th>Average %</th><th>Latest %</th><th>Grade</th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of studentReport.subjects">
+              <td><strong>{{ row.subject_name }}</strong></td>
+              <td>{{ row.assessments }}</td>
+              <td><span [class.danger]="row.average_percent < 40">{{ row.average_percent }}%</span></td>
+              <td>{{ row.latest_percent }}%</td>
+              <td><span class="chip" [class.fail]="row.grade === 'F'">{{ row.grade }}</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="empty" *ngIf="!studentReport.subjects?.length">No marks recorded for this student yet.</p>
+    </div>
+  </ng-container>
+
+  <!-- ============ Subject report ============ -->
+  <ng-container *ngIf="tab === 'subject'">
+    <div class="card form-card">
+      <div class="card-head"><h3>Subject-wise Class Report</h3></div>
+      <div class="filter-row">
+        <select [(ngModel)]="subjectClassId" (change)="onSubjectClassChange()">
+          <option *ngFor="let c of classes" [value]="c.id">{{ c.name }}</option>
+        </select>
+        <select [(ngModel)]="subjectId">
+          <option *ngFor="let s of subjects" [value]="s.id">{{ s.name }}</option>
+        </select>
+        <button class="btn primary" (click)="loadSubjectReport()" [disabled]="loadingSubject">
+          {{ loadingSubject ? 'Loading…' : 'Show report' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="card" *ngIf="subjectReport">
+      <div class="card-head"><h3>Assessment History</h3></div>
+      <p class="empty" *ngIf="!subjectReport.marksheets?.length">
+        No marksheets for this subject yet. Upload marks in the Marksheets page.
+      </p>
+      <div class="table-scroll" *ngIf="subjectReport.marksheets?.length">
+        <table class="table">
+          <thead>
+            <tr><th>Assessment</th><th>Type</th><th>Students</th><th>Average %</th><th>Highest</th><th>Lowest</th><th>Pass Rate</th><th>Weak Students</th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of subjectReport.marksheets">
+              <td><strong>{{ row.title }}</strong></td>
+              <td>{{ row.exam_type || '—' }}</td>
+              <td>{{ row.stats.count }}</td>
+              <td><span [class.danger]="row.stats.average_percent < 40">{{ row.stats.average_percent }}%</span></td>
+              <td>{{ row.stats.highest }}</td>
+              <td>{{ row.stats.lowest }}</td>
+              <td>{{ row.stats.pass_rate }}%</td>
+              <td>
+                <span class="chip warn-chip" *ngIf="row.weak_students?.length">{{ row.weak_students.length }}</span>
+                <span *ngIf="!row.weak_students?.length">—</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ============ Weak students ============ -->
+  <ng-container *ngIf="tab === 'weak'">
+    <div class="card form-card">
+      <div class="card-head"><h3>Students Needing Support</h3></div>
+      <div class="filter-row">
+        <select [(ngModel)]="weakClassId">
+          <option *ngFor="let c of classes" [value]="c.id">{{ c.name }}</option>
+        </select>
+        <label class="threshold">
+          Below
+          <input type="number" [(ngModel)]="weakThreshold" min="0" max="100" />
+          %
+        </label>
+        <button class="btn primary" (click)="loadWeakStudents()" [disabled]="loadingWeak">
+          {{ loadingWeak ? 'Loading…' : 'Find weak students' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="card" *ngIf="weakResult">
+      <div class="card-head">
+        <h3>Below {{ weakResult.threshold_percent }}% Average</h3>
+      </div>
+      <p class="empty" *ngIf="!weakResult.students?.length">
+        Great news — no students below the threshold in this class.
+      </p>
+      <div class="table-scroll" *ngIf="weakResult.students?.length">
+        <table class="table">
+          <thead>
+            <tr><th>Roll No</th><th>Student</th><th>Average %</th><th>Grade</th><th>Assessments</th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let s of weakResult.students">
+              <td>{{ s.roll_no }}</td>
+              <td><strong>{{ s.student_name }}</strong></td>
+              <td><span class="danger">{{ s.average_percent }}%</span></td>
+              <td>{{ s.grade }}</td>
+              <td>{{ s.assessments }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ============ Final term reports ============ -->
+  <ng-container *ngIf="tab === 'final'">
+    <div class="alert info" *ngIf="!finalReports.length">
+      No final term reports yet.
+      <ng-container *ngIf="canCreateFinal">Create one from the Coordinator Dashboard.</ng-container>
+      <ng-container *ngIf="!canCreateFinal">Your coordinator, principal or school owner creates these.</ng-container>
+    </div>
+
+    <div class="card" *ngIf="finalReports.length">
+      <div class="card-head"><h3>Final Term Reports</h3></div>
+      <div class="table-scroll">
+        <table class="table">
+          <thead>
+            <tr><th>Report</th><th>Class</th><th>Academic Year</th><th>Created</th><th></th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of finalReports" [class.active-row]="finalDetail?.id === r.id">
+              <td><strong>{{ r.title }}</strong></td>
+              <td>{{ r.class || '—' }}</td>
+              <td>{{ r.academic_year || '—' }}</td>
+              <td>{{ r.created_at | date: 'mediumDate' }}</td>
+              <td><button class="btn secondary sm" (click)="openFinalReport(r)">Open</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card preview-card" *ngIf="finalContent">
+      <div class="card-head">
+        <h3>{{ finalDetail?.title }}</h3>
+        <div class="head-actions">
+          <button class="btn secondary sm" (click)="exportFinalReport('pdf')">⬇ PDF</button>
+          <button class="btn secondary sm" (click)="exportFinalReport('docx')">⬇ DOCX</button>
+          <button class="btn secondary sm" (click)="exportFinalReport('xlsx')">⬇ Excel</button>
+        </div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-box"><strong>{{ finalContent.class_average }}%</strong><span>Class Average</span></div>
+        <div class="stat-box"><strong>{{ finalContent.pass_percent }}%</strong><span>Pass Mark</span></div>
+        <div class="stat-box"><strong>{{ finalContent.marksheets_included }}</strong><span>Marksheets</span></div>
+        <div class="stat-box"><strong>{{ finalContent.students.length || 0 }}</strong><span>Students</span></div>
+      </div>
+      <div class="table-scroll" *ngIf="finalContent.students?.length">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Roll No</th><th>Name</th>
+              <th *ngFor="let subject of finalContent.subject_order">{{ subject }}</th>
+              <th>Overall %</th><th>Grade</th><th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let s of finalContent.students">
+              <td>{{ s.roll_no }}</td>
+              <td><strong>{{ s.name }}</strong></td>
+              <td *ngFor="let value of finalStudentSubjects(s)">{{ value ?? '—' }}</td>
+              <td><span [class.danger]="s.overall_percent < finalContent.pass_percent">{{ s.overall_percent }}%</span></td>
+              <td>{{ s.grade }}</td>
+              <td><span class="chip" [class.fail]="s.status !== 'Pass'">{{ s.status }}</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="subject-stats" *ngIf="finalContent.subject_stats?.length">
+        <h4>Subject Averages</h4>
+        <div class="chips">
+          <span class="chip" *ngFor="let stat of finalContent.subject_stats">
+            {{ stat.subject }}: {{ stat.average }}%
+          </span>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ============ School summary (admin) ============ -->
+  <ng-container *ngIf="tab === 'summary'">
+    <div class="page-head">
+      <div>
+        <h2>Whole-school summary</h2>
+        <p class="page-sub">Enrollment, class-wise strength, staff list, attendance, exam schedule and distribution.</p>
+      </div>
+      <div class="head-actions">
+        <button class="btn secondary sm" (click)="loadAdminSummary()" [disabled]="loadingSummary">↻ Refresh</button>
+        <button class="btn primary sm" (click)="printSummary()" [disabled]="!summary">🖨 Print</button>
+      </div>
+    </div>
+
+    <div class="loading" *ngIf="loadingSummary">Loading summary…</div>
+
+    <ng-container *ngIf="summary">
+      <div class="stat-grid">
+        <div class="stat-box"><strong>{{ summary.enrollment.total }}</strong><span>Total Enrollment</span></div>
+        <div class="stat-box"><strong>{{ summary.enrollment.active }}</strong><span>Active Students</span></div>
+        <div class="stat-box"><strong>{{ summary.enrollment.inactive }}</strong><span>Inactive</span></div>
+        <div class="stat-box"><strong>{{ summary.teachers.length }}</strong><span>Staff Members</span></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>Class-wise Students</h3></div>
+        <p class="empty" *ngIf="!summary.class_wise.length">No classes created yet.</p>
+        <div class="table-scroll" *ngIf="summary.class_wise.length">
+          <table class="table">
+            <thead>
+              <tr><th>Class</th><th>Students</th><th>Section-wise</th><th>Strength</th></tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of summary.class_wise">
+                <td><strong>{{ row.class }}</strong></td>
+                <td>{{ row.students }}</td>
+                <td>{{ sectionText(row.sections) }}</td>
+                <td class="bar-cell">
+                  <span class="progress"><span [style.width.%]="barWidth(row.students)"></span></span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="grid cols-2">
+        <div class="card">
+          <div class="card-head"><h3>Attendance — last 7 days</h3></div>
+          <p class="empty" *ngIf="!summary.attendance.length">No student attendance marked in the last week.</p>
+          <div class="table-scroll" *ngIf="summary.attendance.length">
+            <table class="table">
+              <thead>
+                <tr><th>Date</th><th>Marked</th><th>Present</th><th>Absent</th><th>Leave</th><th>Late</th></tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let day of summary.attendance">
+                  <td>{{ day.date | date: 'EEE, d MMM' }}</td>
+                  <td>{{ day.marked }}</td>
+                  <td><span class="chip ok">{{ day.present }}</span></td>
+                  <td><span class="chip danger">{{ day.absent }}</span></td>
+                  <td><span class="chip warn">{{ day.leave }}</span></td>
+                  <td>{{ day.late }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h3>Student Distribution</h3></div>
+          <p class="empty" *ngIf="!summary.distribution.length">No students assigned to class sections yet.</p>
+          <div class="table-scroll" *ngIf="summary.distribution.length">
+            <table class="table">
+              <thead>
+                <tr><th>Class</th><th>Section</th><th>Students</th><th>Share</th></tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let row of summary.distribution">
+                  <td><strong>{{ row.class }}</strong></td>
+                  <td>{{ row.section }}</td>
+                  <td>{{ row.students }}</td>
+                  <td>{{ sharePercent(row.students) }}%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h3>Upcoming Exam Schedule</h3>
+          <a class="btn secondary sm" routerLink="/admin/exam-management">Manage exams</a>
+        </div>
+        <p class="empty" *ngIf="!summary.exam_schedule.length">No exams scheduled from today onwards.</p>
+        <div class="table-scroll" *ngIf="summary.exam_schedule.length">
+          <table class="table">
+            <thead>
+              <tr><th>Date</th><th>Day</th><th>Class</th><th>Subject</th><th>Time</th><th>Term</th></tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let exam of summary.exam_schedule">
+                <td>{{ exam.date | date: 'd MMM y' }}</td>
+                <td>{{ exam.date | date: 'EEEE' }}</td>
+                <td><strong>{{ exam.class }}</strong></td>
+                <td>{{ exam.subject }}</td>
+                <td>{{ exam.start_time }} – {{ exam.end_time }}</td>
+                <td><span class="chip">{{ exam.term }}</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h3>Teacher &amp; Staff List</h3>
+          <input class="search-box" type="search" [(ngModel)]="summarySearch" placeholder="Search name, department, subject…" />
+        </div>
+        <p class="empty" *ngIf="!summaryTeachers.length">No staff members match your search.</p>
+        <div class="table-scroll" *ngIf="summaryTeachers.length">
+          <table class="table">
+            <thead>
+              <tr><th>Name</th><th>Role</th><th>Designation</th><th>Department</th><th>Subjects</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let t of summaryTeachers">
+                <td><strong>{{ t.name }}</strong></td>
+                <td>{{ roleLabel(t.role) }}</td>
+                <td>{{ t.designation || '—' }}</td>
+                <td>{{ t.department || '—' }}</td>
+                <td>
+                  <div class="chips" *ngIf="t.subjects?.length">
+                    <span class="chip" *ngFor="let subject of t.subjects">{{ subject }}</span>
+                  </div>
+                  <span *ngIf="!t.subjects?.length">—</span>
+                </td>
+                <td><span class="chip" [class.ok]="t.is_active" [class.neutral]="!t.is_active">{{ t.is_active ? 'Active' : 'Inactive' }}</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </ng-container>
+  </ng-container>
+</div>

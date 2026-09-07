@@ -1,0 +1,75 @@
+<div class="shell" [class.sidebar-collapsed]="!sidebarOpen">
+
+  <aside class="sidebar" *ngIf="sidebarOpen">
+    <div class="brand">
+      <div class="brand-logo">S</div>
+      <div>
+        <div class="brand-name">SchoolAssist</div>
+        <div class="brand-tag">Pakistan School Platform</div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <a *ngFor="let item of visibleNavItems"
+         [routerLink]="item.route" [queryParams]="item.queryParams" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }"
+         (click)="closeSidebar()">
+        <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"></rect><path d="M8 12h8M12 8v8"></path></svg></span>
+        <span>{{ item.label }}</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="btn ghost ai-btn" (click)="openAssistant()">
+        <span>💬</span> Ask AI Assistant
+      </button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="menu-btn" (click)="toggleSidebar()" aria-label="Toggle menu">☰</button>
+      <div class="topbar-title">{{ currentPageLabel }}</div>
+
+      <div class="spacer"></div>
+
+      <select
+        *ngIf="auth.memberships.length > 1"
+        class="org-select"
+        [value]="auth.activeOrganizationId"
+        (change)="switchOrganization($event)"
+        aria-label="Switch organization">
+        <option *ngFor="let m of auth.memberships" [value]="m.organization_id">
+          {{ m.organization_name }}
+        </option>
+      </select>
+
+      <div class="user-menu">
+        <button class="user-pill" (click)="menuOpen = !menuOpen"
+                aria-haspopup="menu" [attr.aria-expanded]="menuOpen">
+          <div class="user-avatar">{{ initials }}</div>
+          <div class="user-meta">
+            <div class="user-name">{{ auth.user?.full_name || 'Teacher' }}</div>
+            <div class="user-role">{{ roleLabel }} · {{ auth.organizationName }}</div>
+          </div>
+          <span class="user-caret" aria-hidden="true">▾</span>
+        </button>
+
+        <div class="user-dropdown" *ngIf="menuOpen" role="menu">
+          <div class="user-dropdown-head">
+            <strong>{{ auth.user?.full_name || 'Teacher' }}</strong>
+            <span>{{ auth.user?.email }}</span>
+          </div>
+          <button class="user-dropdown-item" (click)="openAccountSettings()">Account settings</button>
+          <button class="user-dropdown-item danger" (click)="logout()">Log out</button>
+        </div>
+      </div>
+      <div class="menu-backdrop" *ngIf="menuOpen" (click)="menuOpen = false"></div>
+    </header>
+
+    <main class="content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>
+
+<app-ai-assistant></app-ai-assistant>

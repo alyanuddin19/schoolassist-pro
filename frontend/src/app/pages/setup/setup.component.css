@@ -1,0 +1,211 @@
+.form-card { margin-bottom: 16px; }
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 0 16px;
+  margin-bottom: 14px;
+}
+
+.class-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.class-box {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.class-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.class-head small { display: block; color: var(--ink-soft); margin-top: 2px; }
+
+.class-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+/* Primary (1-5) / Secondary (6-10) grouping on the Classes tab. */
+.level-filter { display: flex; gap: 6px; flex-wrap: wrap; }
+.level-group + .level-group { margin-top: 20px; }
+.level-head {
+  display: flex; align-items: center; gap: 8px;
+  padding-bottom: 8px; margin-bottom: 12px;
+  border-bottom: 1px dashed var(--line);
+}
+.level-head h4 { margin: 0; font-size: 14px; letter-spacing: .2px; color: var(--brand-deep); }
+.level-chip { margin-top: 6px; }
+
+/* Sections edited inline inside the Edit Class card. */
+.edit-sections { margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--line); }
+.edit-sections .level-head { border-bottom: 0; padding-bottom: 0; margin-bottom: 10px; }
+.section-edit-row {
+  display: grid;
+  grid-template-columns: minmax(130px, 1fr) minmax(160px, 1.3fr) auto auto;
+  gap: 8px; align-items: center; margin-bottom: 8px;
+}
+.section-edit-row:last-child { margin-bottom: 0; margin-top: 12px; }
+@media (max-width: 720px) {
+  .section-edit-row { grid-template-columns: 1fr 1fr; }
+  .section-edit-row .btn { width: 100%; }
+}
+
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chips.wrap { margin-top: 4px; }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--brand-soft);
+  color: var(--brand-dark);
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+
+.chip-x {
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 11px;
+  padding: 0;
+  opacity: 0.6;
+}
+
+.chip-x:hover { opacity: 1; }
+
+.chip-code { font-weight: 500; opacity: 0.8; }
+
+.chip.toggle {
+  cursor: pointer;
+  background: #EDF0F8;
+  color: var(--ink-soft);
+  user-select: none;
+}
+
+.chip.toggle input { accent-color: var(--brand); margin: 0; }
+
+.chip.toggle.on {
+  background: var(--brand-soft);
+  color: var(--brand-dark);
+}
+
+.muted { color: var(--ink-soft); font-size: 12.5px; }
+
+.import-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+.import-stage { margin-top: 12px; }
+
+/* Show Students toggle: the caret flips while the list is open. */
+.staff-toggle { display: inline-flex; align-items: center; gap: 8px; }
+.staff-toggle .caret { display: inline-block; transition: transform .2s ease; }
+.staff-toggle .caret.open { transform: rotate(180deg); }
+
+.import-select, .filter-select {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-family: inherit;
+  font-size: 13.5px;
+  background: #fff;
+}
+
+.file-btn {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.file-btn input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* ---------- classes & sections ---------- */
+.grid.cols-2 { margin-bottom: 16px; }
+.grid.cols-2 .form-card { margin-bottom: 0; }
+
+.class-box .progress { display: block; margin: 2px 0 6px; }
+
+.section-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.section-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: #FBFCFF;
+}
+
+.section-meta { display: flex; flex-direction: column; gap: 3px; align-items: flex-start; }
+
+/* ---------- student profile ---------- */
+.profile-card { border-color: var(--brand); margin-bottom: 16px; }
+
+.profile-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(105px, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.profile-stats > div {
+  background: var(--brand-soft);
+  border-radius: 12px;
+  padding: 12px 8px;
+  text-align: center;
+}
+
+.profile-stats strong { display: block; font-size: 19px; color: var(--brand-dark); }
+.profile-stats span { font-size: 11.5px; color: var(--ink-soft); }
+
+.profile-section {
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+  margin-top: 4px;
+}
+
+.guardian-form {
+  background: #F8FAFF;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 14px;
+}
+
+.guardian-form .chip-row { margin-bottom: 14px; }
+.guardian-form .form-grid { margin-bottom: 10px; }
+.guardian-form .empty { padding: 12px; }
+
+/* Student filter bar: one tidy row — fields share the width and the toggle
+   plus buttons sit on the same bottom line as the inputs. */
+.filters { align-items: flex-end; row-gap: 10px; }
+.filters label.field { flex: 1 1 170px; min-width: 150px; }
+.filters .chip.toggle { align-self: flex-end; margin: 0 0 5px; white-space: nowrap; }
+.filters .btn { flex: none; }
+
+.card-head .search-box { min-width: 260px; }
+
+/* Guardian directory: each child is a clickable chip inside a table cell. */
+.table .chip.pick { white-space: nowrap; }

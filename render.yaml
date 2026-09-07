@@ -1,0 +1,41 @@
+# Render Blueprint: deploys the SchoolAssist FastAPI backend as a web service.
+#
+# How to use (one-time):
+#   1. Push this repository to GitHub.
+#   2. In Render: New + -> Blueprint -> select this repository.
+#   3. Render reads this file and prompts for the secrets marked sync:false.
+#      Fill them in (values never enter the code - they live in Render only):
+#        DATABASE_URL     - connection string from Supabase (see backend/.env.example)
+#        JWT_SECRET_KEY   - long random string (generation command in backend/.env.example)
+#        DASHSCOPE_API_KEY- Groq API key (gsk_...) from https://console.groq.com/keys
+#   4. Apply. Render builds and starts the service; every git push auto-deploys.
+services:
+  - type: web
+    name: schoolassist-api
+    runtime: python
+    rootDir: backend
+    plan: free
+    autoDeploy: true
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      # Supabase Postgres - Session pooler URI (port 5432) with ?sslmode=require
+      - key: DATABASE_URL
+        sync: false
+      # Generate: python -c "import secrets; print(secrets.token_urlsafe(48))"
+      - key: JWT_SECRET_KEY
+        sync: false
+      # Groq API key from https://console.groq.com/keys
+      - key: DASHSCOPE_API_KEY
+        sync: false
+      - key: QWEN_BASE_URL
+        value: https://api.groq.com/openai/v1
+      - key: QWEN_MODEL
+        value: qwen/qwen3.8-27b
+      # Comma-separated frontend origins; add your Vercel URL after it exists,
+      # e.g. https://schoolassist.vercel.app,http://localhost:4200
+      - key: ALLOWED_ORIGINS
+        value: https://schoolassist.vercel.app,http://localhost:4200

@@ -1,0 +1,497 @@
+<div class="page">
+
+  <div class="page-head">
+    <div>
+      <h1>{{ tab === 'staff' ? 'Teacher Management' : 'School Dashboard' }}</h1>
+      <p class="page-sub">
+        {{ tab === 'staff' ? 'Manage teachers and login access.' : 'Manage your school, staff and daily activities.' }}
+      </p>
+    </div>
+  </div>
+
+  <div class="alert error" *ngIf="error">{{ error }}</div>
+  <div class="alert success" *ngIf="notice">{{ notice }}</div>
+  <div class="loading" *ngIf="loading">Loading…</div>
+
+  <!-- ================= Overview ================= -->
+  <ng-container *ngIf="tab === 'overview' && overview">
+    <div class="kpi-grid">
+      <div class="owner-stat"><span>Total Students</span><strong>{{ overview.headcount?.students ?? overview.counts.students }}</strong><small>Active enrollment</small></div>
+      <div class="owner-stat"><span>Total Teachers</span><strong>{{ overview.headcount?.teachers ?? 0 }}</strong><small>Teaching staff</small></div>
+      <div class="owner-stat"><span>Total Classes</span><strong>{{ overview.headcount?.classes ?? overview.counts.classes }}</strong><small>{{ overview.counts.sections || 0 }} sections</small></div>
+      <div class="owner-stat">
+        <span>Teachers Present</span>
+        <strong>{{ overview.attendance_today?.teachers?.present ?? 0 }}</strong>
+        <small *ngIf="overview.attendance_today?.teachers?.marked">of {{ overview.attendance_today?.teachers?.marked }} marked</small>
+        <small *ngIf="!overview.attendance_today?.teachers?.marked">Not marked yet today</small>
+      </div>
+    </div>
+
+    <div class="grid-2 owner-row">
+      <div class="card">
+        <div class="card-head">
+          <h3>Today’s staff attendance · {{ overview.attendance_today?.date }}</h3>
+          <a class="btn secondary sm" routerLink="/admin/teacher-attendance">Staff register</a>
+        </div>
+        <div class="att-block">
+          <div class="att-row">
+            <span class="chip ok">Present {{ overview.attendance_today?.teachers?.present ?? 0 }}</span>
+            <span class="chip danger">Absent {{ overview.attendance_today?.teachers?.absent ?? 0 }}</span>
+            <span class="chip neutral">Leave {{ overview.attendance_today?.teachers?.leave ?? 0 }}</span>
+            <span class="chip warn">Late {{ overview.attendance_today?.teachers?.late ?? 0 }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h3>Today’s schedule · {{ todayName }}</h3>
+          <a class="btn secondary sm" routerLink="/admin/timetable">Open timetable</a>
+        </div>
+        <div class="empty-panel" *ngIf="!todaySchedule.length">
+          <strong>No periods scheduled for today.</strong>
+          <span>The coordinator creates the weekly timetable — it appears here automatically.</span>
+        </div>
+        <div class="schedule-list" *ngIf="todaySchedule.length">
+          <div class="schedule-line" *ngFor="let entry of todaySchedule">
+            <span class="mono">{{ entry.start_time }}–{{ entry.end_time }}</span>
+            <strong>{{ entry.subject }}</strong>
+            <span class="muted">{{ entry.class }}<span *ngIf="entry.section"> · {{ entry.section }}</span></span>
+            <span class="spacer"></span>
+            <span class="chip neutral">{{ entry.teacher || 'Unassigned' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2 owner-row">
+      <div class="card">
+        <div class="card-head">
+          <h3>Upcoming exams</h3>
+          <a class="btn secondary sm" routerLink="/admin/exam-management">Exam management</a>
+        </div>
+        <div class="empty-panel compact" *ngIf="!overview.upcoming_exams?.length">
+          <strong>No upcoming exams</strong>
+          <span>Create an exam timetable to see the schedule here.</span>
+        </div>
+        <div class="table-scroll" *ngIf="overview.upcoming_exams?.length">
+          <table class="table">
+            <thead><tr><th>Date</th><th>Class</th><th>Subject</th><th>Time</th><th>Term</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let exam of overview.upcoming_exams">
+                <td class="mono">{{ exam.date }}</td>
+                <td>{{ exam.class }}</td>
+                <td><strong>{{ exam.subject }}</strong></td>
+                <td>{{ exam.start_time }} – {{ exam.end_time }}</td>
+                <td><span class="chip">{{ exam.term }}</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h3>School seats</h3>
+          <button class="btn secondary sm" (click)="showPlans = !showPlans">
+            {{ showPlans ? 'Hide plans' : 'Manage plan' }}
+          </button>
+        </div>
+
+        <div class="seat-block">
+          <p class="seat-line">
+            <strong>Teacher seats</strong>
+            <span class="chip" *ngIf="overview.seats.plan_name">{{ overview.seats.plan_name }}</span>
+          </p>
+          <p class="seat-line">
+            <strong>{{ overview.seats.seats_used }}</strong> of
+            <strong>{{ overview.seats.seats_total }}</strong> used ·
+            {{ overview.seats.seats_remaining }} free
+          </p>
+          <div class="progress"><span [style.width.%]="seatPercent"></span></div>
+        </div>
+
+        <div class="seat-block">
+          <p class="seat-line"><strong>Student seats</strong></p>
+          <p class="seat-line" *ngIf="overview.seats.student_seats_total">
+            <strong>{{ overview.seats.student_seats_used ?? 0 }}</strong> of
+            <strong>{{ overview.seats.student_seats_total }}</strong> used ·
+            {{ overview.seats.student_seats_total - (overview.seats.student_seats_used ?? 0) }} free
+          </p>
+          <p class="seat-line" *ngIf="!overview.seats.student_seats_total">
+            <strong>{{ overview.seats.student_seats_used ?? 0 }}</strong> students enrolled · unlimited
+          </p>
+          <div class="progress"><span [style.width.%]="studentSeatPercent"></span></div>
+        </div>
+
+        <div class="mini-stats">
+          <div class="mini-stat"><strong>{{ overview.counts.subjects || 0 }}</strong><span>Subjects</span></div>
+          <div class="mini-stat"><strong>{{ overview.counts.classes || 0 }}</strong><span>Classes</span></div>
+          <div class="mini-stat"><strong>{{ activeMembers }}</strong><span>Active accounts</span></div>
+        </div>
+
+        <!-- Plan switching and payment history live inside the seats card. -->
+        <ng-container *ngIf="showPlans">
+          <div class="seat-block">
+            <p class="seat-line"><strong>Teacher Seat Plans</strong></p>
+            <p class="hint">
+              Payments are sandboxed for the MVP — switching plans records a mock payment.
+            </p>
+            <div class="plan-row">
+              <div class="plan-box" *ngFor="let plan of plans"
+                   [class.current]="overview.seats.plan_code === plan.code">
+                <div class="plan-seats">{{ plan.teacher_seats }} seats</div>
+                <div class="plan-name">{{ plan.name }}</div>
+                <div class="plan-price">PKR {{ plan.price_pkr | number }}<span>/{{ plan.billing_period }}</span></div>
+                <span class="chip ok" *ngIf="overview.seats.plan_code === plan.code">current</span>
+                <button
+                  class="btn secondary sm"
+                  *ngIf="overview.seats.plan_code !== plan.code"
+                  (click)="changePlan(plan)">
+                  Switch plan
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="seat-block">
+            <p class="seat-line"><strong>Payment Records</strong></p>
+            <div class="table-scroll">
+              <table class="table">
+                <thead>
+                  <tr><th>Date</th><th>Description</th><th>Provider</th><th>Amount</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let payment of payments">
+                    <td>{{ payment.created_at | date: 'mediumDate' }}</td>
+                    <td>{{ payment.description || '—' }}</td>
+                    <td>{{ payment.provider }}</td>
+                    <td>PKR {{ payment.amount_pkr | number }}</td>
+                    <td><span class="chip" [class.ok]="payment.status === 'paid'">{{ payment.status }}</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="empty" *ngIf="!payments.length">No payments recorded yet.</p>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+
+    <div class="card quick-actions-card">
+      <div class="card-head"><h3>Quick actions</h3></div>
+      <div class="quick-actions">
+        <a class="btn secondary sm" routerLink="/admin/teachers">Add Teacher</a>
+        <a class="btn secondary sm" routerLink="/admin/students">Add Student</a>
+        <a class="btn secondary sm" routerLink="/admin/classes">Classes &amp; Sections</a>
+        <a class="btn secondary sm" routerLink="/admin/subjects">Subjects</a>
+        <a class="btn secondary sm" routerLink="/admin/assignments">Teacher Assignments</a>
+        <a class="btn secondary sm" routerLink="/admin/timetable">Timetable</a>
+        <a class="btn secondary sm" routerLink="/admin/exam-management">Exams &amp; Seating</a>
+        <a class="btn secondary sm" routerLink="/admin/announcements">Post Announcement</a>
+        <a class="btn secondary sm" routerLink="/admin/reports">School Reports</a>
+        <a class="btn secondary sm" routerLink="/admin/settings">School Settings</a>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ================= Staff ================= -->
+  <ng-container *ngIf="tab === 'staff'">
+    <!-- Two ways to bring a teacher in: create the account directly or send an invite. -->
+    <div class="staff-mode-row">
+      <button class="btn" [class.secondary]="staffMode !== 'add'" (click)="staffMode = 'add'">+ Add Teacher</button>
+      <button class="btn" [class.secondary]="staffMode !== 'invite'" (click)="staffMode = 'invite'">Invite Teacher</button>
+      <button class="btn secondary staff-toggle" (click)="showStaff = !showStaff" [attr.aria-expanded]="showStaff">
+        {{ showStaff ? 'Hide Teachers' : 'Show Teachers' }}
+        <span class="chip neutral">{{ staff.length }}</span>
+        <span class="caret" [class.open]="showStaff" aria-hidden="true">▾</span>
+      </button>
+    </div>
+
+    <div class="alert info" *ngIf="credentials">
+      <strong>Login account created for {{ credentials.name }}</strong><br>
+      Email: <span class="mono">{{ credentials.email }}</span> ·
+      Employee ID: <span class="mono">{{ credentials.employee_id }}</span> ·
+      Temporary password: <strong class="mono">{{ credentials.password }}</strong><br>
+      <span *ngIf="credentials.emailed">Credentials were emailed to the teacher.</span>
+      <span *ngIf="!credentials.emailed">Email delivery is not configured — share these credentials manually. They are shown only once.</span>
+      <button class="btn secondary sm" (click)="dismissCredentials()">Dismiss</button>
+    </div>
+
+    <div class="card form-card" *ngIf="!editing && staffMode === 'add'">
+      <div class="card-head">
+        <h3>Add Teacher / Staff</h3>
+        <span class="chip">Login account is created automatically</span>
+      </div>
+      <div class="form-grid">
+        <label class="field">
+          <span>Full name *</span>
+          <input type="text" [(ngModel)]="form.full_name" placeholder="e.g. Ali Ahmed" />
+        </label>
+        <label class="field">
+          <span>Teacher / Employee ID</span>
+          <input type="text" value="Auto-generated unique ID" readonly aria-label="Teacher ID is generated automatically" />
+        </label>
+        <label class="field">
+          <span>Email * (used for login)</span>
+          <input type="email" [(ngModel)]="form.email" placeholder="teacher@school.pk" />
+        </label>
+        <label class="field">
+          <span>Phone number</span>
+          <input type="tel" [(ngModel)]="form.phone" placeholder="03xx-xxxxxxx" />
+        </label>
+        <label class="field">
+          <span>Qualification</span>
+          <input type="text" [(ngModel)]="form.qualification" placeholder="e.g. MSc Mathematics, B.Ed" />
+        </label>
+        <label class="field">
+          <span>Designation</span>
+          <select [(ngModel)]="form.designation">
+            <option value="Teacher">Teacher</option>
+            <option value="Senior Teacher">Senior Teacher</option>
+            <option value="Subject Coordinator">Subject Coordinator</option>
+            <option value="Vice Principal">Vice Principal</option>
+            <option value="Principal">Principal / Academic Head</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Teaching level</span>
+          <select [(ngModel)]="form.level">
+            <option value="primary">Primary (classes 1-5)</option>
+            <option value="secondary">Secondary (classes 6-10)</option>
+            <option value="">Both levels</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Account role</span>
+          <select [(ngModel)]="form.role">
+            <option value="teacher">Teacher</option>
+            <option value="subject_coordinator">Subject Coordinator</option>
+            <option value="vice_principal">Vice Principal</option>
+            <option value="principal">Principal / Academic Head</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Gender (optional)</span>
+          <select [(ngModel)]="form.gender">
+            <option value="">Prefer not to say</option>
+            <option>Female</option>
+            <option>Male</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Joining date (optional)</span>
+          <input type="date" [(ngModel)]="form.joining_date" />
+        </label>
+        <label class="field">
+          <span>Temporary password (optional)</span>
+          <input type="text" [(ngModel)]="form.password" placeholder="Auto-generated if empty" />
+        </label>
+        <label class="field checkbox">
+          <input type="checkbox" [(ngModel)]="form.send_email" />
+          <span>Email the login credentials to this teacher</span>
+        </label>
+      </div>
+
+      <div class="subject-picker">
+        <span class="field-label">Subjects they can teach</span>
+        <div class="chip-row">
+          <button type="button" class="chip pick" *ngFor="let subject of subjects"
+                  [class.active]="form.subject_ids.includes(subject.id)"
+                  (click)="toggleSubject(form, subject.id)">
+            {{ subject.name }}
+          </button>
+          <span class="hint" *ngIf="!subjects.length">Add subjects from Class &amp; Student Setup first.</span>
+        </div>
+      </div>
+
+      <button class="btn" (click)="createTeacher()" [disabled]="creatingTeacher">
+        {{ creatingTeacher ? 'Creating…' : 'Create Teacher Account' }}
+      </button>
+      <p class="hint">
+        Class &amp; section assignments are done from
+        <a routerLink="/admin/assignments">Teacher Assignments</a>.
+      </p>
+    </div>
+
+    <div class="card form-card" *ngIf="editing">
+      <div class="card-head">
+        <h3>Edit · {{ editing.name }}</h3>
+        <button class="btn ghost sm" (click)="cancelEdit()">Close</button>
+      </div>
+      <div class="form-grid">
+        <label class="field"><span>Full name</span><input type="text" [(ngModel)]="editForm.full_name" /></label>
+        <label class="field"><span>Email (login)</span><input type="email" [value]="editForm.email" readonly /></label>
+        <label class="field"><span>Phone number</span><input type="tel" [(ngModel)]="editForm.phone" /></label>
+        <label class="field"><span>Employee ID</span><input type="text" [value]="editing.employee_id || '—'" readonly /></label>
+        <label class="field"><span>Qualification</span><input type="text" [(ngModel)]="editForm.qualification" /></label>
+        <label class="field">
+          <span>Designation</span>
+          <select [(ngModel)]="editForm.designation">
+            <option value="Teacher">Teacher</option>
+            <option value="Senior Teacher">Senior Teacher</option>
+            <option value="Subject Coordinator">Subject Coordinator</option>
+            <option value="Vice Principal">Vice Principal</option>
+            <option value="Principal">Principal / Academic Head</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Teaching level</span>
+          <select [(ngModel)]="editForm.level">
+            <option value="primary">Primary (classes 1-5)</option>
+            <option value="secondary">Secondary (classes 6-10)</option>
+            <option value="">Both levels</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Account role</span>
+          <select [(ngModel)]="editForm.role">
+            <option value="teacher">Teacher</option>
+            <option value="subject_coordinator">Subject Coordinator</option>
+            <option value="vice_principal">Vice Principal</option>
+            <option value="principal">Principal / Academic Head</option>
+            <option value="org_admin">School Owner</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Gender</span>
+          <select [(ngModel)]="editForm.gender">
+            <option value="">Prefer not to say</option>
+            <option>Female</option>
+            <option>Male</option>
+          </select>
+        </label>
+        <label class="field"><span>Joining date</span><input type="date" [(ngModel)]="editForm.joining_date" /></label>
+      </div>
+
+      <div class="subject-picker">
+        <span class="field-label">Subjects they can teach</span>
+        <div class="chip-row">
+          <button type="button" class="chip pick" *ngFor="let subject of subjects"
+                  [class.active]="editForm.subject_ids.includes(subject.id)"
+                  (click)="toggleSubject(editForm, subject.id)">
+            {{ subject.name }}
+          </button>
+        </div>
+      </div>
+
+      <div class="row-actions">
+        <button class="btn" (click)="saveEdit()" [disabled]="savingEdit">{{ savingEdit ? 'Saving…' : 'Save changes' }}</button>
+        <button class="btn secondary sm" (click)="cancelEdit()">Cancel</button>
+      </div>
+    </div>
+
+    <div class="card" *ngIf="showStaff">
+      <div class="card-head">
+        <h3>Teachers &amp; Staff ({{ staff.length }})</h3>
+        <input type="search" class="search-box" placeholder="Search name, email, employee ID, level…" [(ngModel)]="staffSearch" />
+      </div>
+      <div class="table-scroll">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Name</th><th>Employee ID</th><th>Role</th><th>Level</th>
+              <th>Subjects</th><th>Assigned classes</th><th>Status</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let member of visibleStaff">
+              <td>
+                <strong>{{ member.name }}</strong>
+                <div class="hint">{{ member.email }}<span *ngIf="member.phone"> · {{ member.phone }}</span></div>
+                <div class="hint" *ngIf="member.qualification">{{ member.qualification }}</div>
+              </td>
+              <td class="mono">{{ member.employee_id || '—' }}</td>
+              <td>
+                <span class="chip">{{ roleLabels[member.role] || member.role }}</span>
+                <div class="hint" *ngIf="member.designation">{{ member.designation }}</div>
+              </td>
+              <td>
+                <span class="chip" [class.neutral]="!member.level">{{ levelLabel(member.level) }}</span>
+              </td>
+              <td>
+                <span class="chip neutral" *ngFor="let id of member.subject_ids">{{ subjectName(id) }}</span>
+                <span class="hint" *ngIf="!member.subject_ids.length">—</span>
+              </td>
+              <td>{{ assignedClasses(member.id) }}</td>
+              <td>
+                <span class="chip ok" *ngIf="member.is_active">active</span>
+                <span class="chip neutral" *ngIf="!member.is_active">inactive</span>
+              </td>
+              <td>
+                <div class="row-actions">
+                  <button class="btn secondary sm" (click)="startEdit(member)">Edit</button>
+                  <button class="btn danger sm" *ngIf="member.role !== 'org_admin'" (click)="toggleActive(member)">
+                    {{ member.is_active ? 'Deactivate' : 'Activate' }}
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="empty" *ngIf="!visibleStaff.length">No staff members match your search.</p>
+    </div>
+
+    <!-- Invites: an alternative way to bring a teacher into the school. -->
+    <div class="card form-card" *ngIf="staffMode === 'invite'">
+      <div class="card-head"><h3>Invite a Teacher</h3></div>
+      <p class="muted">
+        Create an invite and share the code. The teacher signs up at the <a routerLink="/invite" class="link">invite page</a>
+        and instantly joins your school.
+      </p>
+      <div class="form-grid">
+        <label class="field">
+          <span>Email</span>
+          <input type="email" [(ngModel)]="inviteEmail" placeholder="teacher@school.pk" />
+        </label>
+        <label class="field">
+          <span>Full name (optional)</span>
+          <input type="text" [(ngModel)]="inviteName" placeholder="e.g. Ayesha Khan" />
+        </label>
+        <label class="field">
+          <span>Role</span>
+          <select [(ngModel)]="inviteRole">
+            <option value="teacher">Teacher</option>
+            <option value="subject_coordinator">Subject Coordinator</option>
+            <option value="vice_principal">Vice Principal</option>
+            <option value="principal">Principal / Academic Head</option>
+          </select>
+        </label>
+      </div>
+      <button class="btn primary" (click)="createInvite()" [disabled]="creatingInvite">
+        {{ creatingInvite ? 'Creating…' : 'Create invite' }}
+      </button>
+      <div class="alert success" *ngIf="lastInviteCode">
+        Invite code: <strong class="code">{{ lastInviteCode }}</strong>
+        <button class="btn secondary sm" (click)="copyCode(lastInviteCode)">Copy</button>
+      </div>
+    </div>
+
+    <div class="card" *ngIf="staffMode === 'invite'">
+      <div class="card-head"><h3>Pending &amp; Past Invites</h3></div>
+      <div class="table-scroll">
+        <table class="table">
+          <thead>
+            <tr><th>Email</th><th>Name</th><th>Role</th><th>Code</th><th>Status</th><th></th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let invite of invites">
+              <td>{{ invite.email }}</td>
+              <td>{{ invite.full_name || '—' }}</td>
+              <td>{{ roleLabels[invite.role] || invite.role }}</td>
+              <td><code>{{ invite.invite_code }}</code></td>
+              <td><span class="chip" [class.ok]="invite.status === 'accepted'">{{ invite.status }}</span></td>
+              <td>
+                <button class="btn danger sm" *ngIf="invite.status === 'pending'" (click)="revokeInvite(invite)">
+                  Revoke
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="empty" *ngIf="!invites.length">No invites yet.</p>
+    </div>
+  </ng-container>
+</div>

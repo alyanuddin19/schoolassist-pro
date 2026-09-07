@@ -1,0 +1,48 @@
+<app-auth-shell>
+  <div class="auth-card">
+    <div class="auth-brand">
+      <div class="auth-logo">S</div>
+      <div>
+        <h1>Join your school</h1>
+        <p>Accept a SchoolAssist teacher invitation</p>
+      </div>
+    </div>
+
+    <p class="auth-sub">
+      Enter the invite code from your school owner to activate your teacher account.
+    </p>
+
+    <form (ngSubmit)="submit()">
+      <label class="field">
+        <span>Invite code</span>
+        <input type="text" name="inviteCode" [(ngModel)]="inviteCode" placeholder="e.g. SA-AB12CD" class="code-input" />
+      </label>
+      <label class="field">
+        <span>Full name</span>
+        <input type="text" name="fullName" [(ngModel)]="fullName" placeholder="e.g. Ali Raza" />
+      </label>
+      <label class="field">
+        <span>Email (if the invite was sent to your email)</span>
+        <input type="email" name="email" [(ngModel)]="email" placeholder="teacher@email.com" />
+      </label>
+      <label class="field">
+        <span>Password</span>
+        <input type="password" name="password" [(ngModel)]="password" autocomplete="new-password" placeholder="At least 6 characters" />
+      </label>
+      <label class="field">
+        <span>Confirm password</span>
+        <input type="password" name="confirmPassword" [(ngModel)]="confirmPassword" autocomplete="new-password" placeholder="Repeat password" />
+      </label>
+
+      <div class="alert error" *ngIf="error">{{ error }}</div>
+
+      <button class="btn primary block" type="submit" [disabled]="loading">
+        {{ loading ? 'Joining…' : 'Join school' }}
+      </button>
+    </form>
+
+    <div class="auth-links">
+      <a routerLink="/login">Back to login</a>
+    </div>
+  </div>
+</app-auth-shell>

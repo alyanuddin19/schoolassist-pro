@@ -1,0 +1,132 @@
+<div class="page">
+
+  <div class="page-head">
+    <div>
+      <h1>Coordinator Dashboard</h1>
+      <p class="page-sub">Subject-wise class performance, weak students and final term reports.</p>
+    </div>
+    <select class="class-select" [value]="selectedClassId" (change)="onClassChange($event)">
+      <option *ngFor="let c of classes" [value]="c.id">{{ c.name }}</option>
+    </select>
+  </div>
+
+  <div class="alert error" *ngIf="error">{{ error }}</div>
+  <div class="alert success" *ngIf="notice">{{ notice }}</div>
+  <div class="loading" *ngIf="loading">Loading class analytics…</div>
+
+  <ng-container *ngIf="!loading">
+
+    <div class="alert info" *ngIf="!classes.length">
+      No classes yet. Create classes in Class &amp; Student Setup, upload marksheets, and performance analytics will appear here.
+    </div>
+
+    <div class="action-grid">
+      <a class="action-card" routerLink="/setup">
+        <strong>Class &amp; Student Setup</strong>
+        <span>Manage classes, sections, students, subjects, and teacher assignments.</span>
+      </a>
+      <a class="action-card" routerLink="/attendance">
+        <strong>Student Attendance</strong>
+        <span>Open the recovered attendance desk for daily class records.</span>
+      </a>
+      <a class="action-card" routerLink="/announcements">
+        <strong>Announcements</strong>
+        <span>Publish notices for staff, students, parents, or a class.</span>
+      </a>
+      <a class="action-card" routerLink="/reports">
+        <strong>Reports</strong>
+        <span>Review student, subject, class, and final term reporting.</span>
+      </a>
+    </div>
+
+    <!-- Subject performance -->
+    <div class="card" *ngIf="hasData">
+      <div class="card-head">
+        <h3>{{ selectedClassName }} — Subject Performance</h3>
+        <button class="btn primary" (click)="createFinalReport()" [disabled]="creatingReport">
+          {{ creatingReport ? 'Creating…' : 'Create final term report' }}
+        </button>
+      </div>
+      <div class="table-scroll">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Subject</th><th>Assessments</th><th>Students</th><th>Average %</th>
+              <th>Highest</th><th>Lowest</th><th>Pass Rate</th><th>Class Avg Marks</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let s of classPerformance?.subjects">
+              <td><strong>{{ s.subject_name }}</strong></td>
+              <td>{{ s.marksheets }}</td>
+              <td>{{ s.stats.count }}</td>
+              <td>
+                <span class="grade-band" [class.danger]="s.stats.average_percent < 40">{{ s.stats.average_percent | number: '1.0-1' }}%</span>
+              </td>
+              <td>{{ s.stats.highest }}</td>
+              <td>{{ s.stats.lowest }}</td>
+              <td>{{ s.stats.pass_rate }}%</td>
+              <td>{{ s.stats.average | number: '1.0-1' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="report-form">
+        <label class="field inline">
+          <span>Academic year</span>
+          <input type="text" [(ngModel)]="academicYear" placeholder="e.g. 2026-27" />
+        </label>
+      </div>
+    </div>
+
+    <!-- Weak students -->
+    <div class="card" *ngIf="weakStudents?.students?.length">
+      <div class="card-head">
+        <h3>Students Needing Support (below {{ weakStudents?.threshold_percent }}%)</h3>
+      </div>
+      <div class="table-scroll">
+        <table class="table">
+          <thead>
+            <tr><th>Roll No</th><th>Student</th><th>Average %</th><th>Grade</th><th>Assessments</th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let s of weakStudents?.students">
+              <td>{{ s.roll_no }}</td>
+              <td><strong>{{ s.student_name }}</strong></td>
+              <td><span class="grade-band danger">{{ s.average_percent | number: '1.0-1' }}%</span></td>
+              <td>{{ s.grade }}</td>
+              <td>{{ s.assessments }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Final reports -->
+    <div class="card" *ngIf="finalReports.length">
+      <div class="card-head"><h3>Recent Final Term Reports</h3></div>
+      <div class="table-scroll">
+        <table class="table">
+          <thead>
+            <tr><th>Report</th><th>Created</th><th>Export</th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let report of finalReports">
+              <td><strong>{{ report.title }}</strong></td>
+              <td>{{ report.created_at | date: 'mediumDate' }}</td>
+              <td>
+                <button class="btn secondary sm" (click)="exportReport(report, 'pdf')">PDF</button>
+                <button class="btn secondary sm" (click)="exportReport(report, 'docx')">DOCX</button>
+                <button class="btn secondary sm" (click)="exportReport(report, 'xlsx')">Excel</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="alert info" *ngIf="classes.length && !hasData && weakStudents && !weakStudents.students?.length">
+      No marksheets recorded for {{ selectedClassName }} yet. Upload marks in the Marksheets page to unlock analytics.
+    </div>
+  </ng-container>
+</div>

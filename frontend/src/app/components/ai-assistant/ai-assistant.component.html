@@ -1,0 +1,164 @@
+<!-- Floating launcher -->
+<button class="assistant-fab" *ngIf="!open" (click)="openWidget()" aria-label="Open AI assistant">
+  <span class="fab-icon">💬</span>
+  <span class="fab-label">Ask AI</span>
+</button>
+
+<!-- Chat panel -->
+<div class="assistant-panel" *ngIf="open">
+  <div class="assistant-header">
+    <div class="assistant-title">
+      <span class="assistant-avatar">🤖</span>
+      <div>
+        <strong>SchoolAssist AI</strong>
+        <small>Qwen-powered teaching assistant</small>
+      </div>
+    </div>
+    <div class="header-controls">
+      <select [(ngModel)]="language" name="language" class="lang-select" title="Reply language">
+        <option value="en">English</option>
+        <option value="ur">اردو Urdu</option>
+        <option value="roman_urdu">Roman Urdu</option>
+      </select>
+      <button
+        class="icon-btn"
+        [class.active]="voiceOut"
+        [disabled]="!canSpeak"
+        (click)="toggleVoiceOut()"
+        title="Voice output on/off">
+        🔊
+      </button>
+      <button class="icon-btn" (click)="closeWidget()" title="Close" aria-label="Close assistant">✕</button>
+    </div>
+  </div>
+
+  <div class="assistant-messages" #messagesBox>
+    <div
+      *ngFor="let message of messages; let i = index; trackBy: trackByIndex"
+      class="msg-row"
+      [class.user]="message.role === 'user'"
+      [class.assistant]="message.role === 'assistant'">
+
+      <div class="bubble">
+        <img *ngIf="message.imagePreview" [src]="message.imagePreview" class="bubble-image" alt="Attached question" />
+        <p class="msg-text">{{ message.content }}</p>
+
+        <!-- action badge -->
+        <div class="action-badge" *ngIf="message.action">
+          <span class="badge-dot" [class.ok]="message.actionStatus === 'success'" [class.fail]="message.actionStatus === 'error'"></span>
+          <span class="badge-text">action: {{ message.action.name }}</span>
+          <span class="badge-status" *ngIf="message.actionStatus">· {{ message.actionStatus }}</span>
+        </div>
+
+        <!-- action error -->
+        <div class="action-error" *ngIf="message.errorText">⚠️ {{ message.errorText }}</div>
+
+        <!-- action result display -->
+        <div class="action-display" *ngIf="message.display">
+          <div class="display-title" *ngIf="message.display.title">{{ message.display.title }}</div>
+
+          <!-- table -->
+          <div class="table-scroll" *ngIf="message.display.type === 'table'">
+            <table class="mini-table">
+              <thead>
+                <tr>
+                  <th *ngFor="let col of message.display.columns">{{ col }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let row of message.display.rows">
+                  <td *ngFor="let col of message.display.columns">{{ row[col] }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- stats -->
+          <div class="stat-grid" *ngIf="message.display.type === 'stats'">
+            <div class="stat-box" *ngFor="let stat of message.display.stats">
+              <div class="stat-value">{{ stat.value }}</div>
+              <div class="stat-label">{{ stat.label }}</div>
+            </div>
+          </div>
+
+          <!-- generated document -->
+          <div class="generated-doc" *ngIf="message.display.type === 'generated'">
+            <div class="doc-chip">{{ message.display.kind || 'document' }} generated ✓</div>
+            <pre class="doc-preview">{{ message.display.text }}</pre>
+          </div>
+
+          <!-- route -->
+          <button class="btn secondary sm" *ngIf="message.display.type === 'route'" (click)="navigateTo(message.display)">
+            {{ message.display.title || 'Open page' }} →
+          </button>
+
+          <!-- plain message -->
+          <p class="display-text" *ngIf="message.display.type === 'message' && message.display.text">
+            {{ message.display.text }}
+          </p>
+        </div>
+
+        <button class="speak-btn" *ngIf="message.role === 'assistant' && canSpeak" (click)="speakMessage(message)" title="Read aloud">
+          🔉
+        </button>
+      </div>
+    </div>
+
+    <div class="msg-row assistant" *ngIf="sending">
+      <div class="bubble typing">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- suggestions -->
+  <div class="suggestion-row" *ngIf="messages.length <= 2">
+    <button
+      *ngFor="let suggestion of suggestions"
+      class="suggestion-chip"
+      (click)="useSuggestion(suggestion.prompt)"
+      [disabled]="sending">
+      {{ suggestion.label }}
+    </button>
+  </div>
+
+  <!-- image attachment preview -->
+  <div class="attachment-row" *ngIf="imagePreview">
+    <img [src]="imagePreview" class="attachment-thumb" alt="Attachment" />
+    <span class="attachment-name">{{ imageName }}</span>
+    <button class="icon-btn" (click)="removeImage()" title="Remove image">✕</button>
+  </div>
+
+  <!-- composer -->
+  <div class="composer">
+    <div class="composer-row">
+      <button
+        class="icon-btn mic"
+        [class.listening]="listening"
+        [disabled]="!canListen"
+        (click)="toggleListening()"
+        [title]="canListen ? 'Voice input (browser speech recognition)' : 'Voice input not supported in this browser'">
+        🎤
+      </button>
+
+      <label class="icon-btn attach" title="Attach a question image" [class.disabled]="sending">
+        📎
+        <input type="file" accept="image/*" (change)="onImageSelected($event)" [disabled]="sending" />
+      </label>
+
+      <textarea
+        #messageInput
+        class="composer-input"
+        rows="1"
+        [(ngModel)]="draft"
+        [placeholder]="listening ? 'Listening… speak now' : 'Ask anything — English, Urdu or Roman Urdu'"
+        (keydown)="onDraftKeydown($event)"></textarea>
+
+      <button class="icon-btn send" (click)="send()" [disabled]="!draft.trim() || sending" title="Send">➤</button>
+    </div>
+    <div class="interim" *ngIf="listening && interimText">{{ interimText }}</div>
+    <div class="composer-hint" *ngIf="!canListen">
+      Voice input needs Chrome or Edge. Text chat works everywhere.
+    </div>
+  </div>
+</div>

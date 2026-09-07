@@ -1,0 +1,156 @@
+<div class="page">
+
+  <div class="page-head">
+    <div>
+      <h1>Marksheets</h1>
+      <p class="page-sub">Upload marks from Excel or CSV — analytics update instantly.</p>
+    </div>
+  </div>
+
+  <div class="alert error" *ngIf="error">{{ error }}</div>
+  <div class="alert success" *ngIf="notice">{{ notice }}</div>
+  <div class="loading" *ngIf="loading">Loading…</div>
+
+  <!-- Upload -->
+  <div class="card form-card">
+    <div class="card-head"><h3>Upload Marksheet</h3></div>
+    <div class="form-grid">
+      <label class="field">
+        <span>Class</span>
+        <select [(ngModel)]="classId" (change)="onClassChange()">
+          <option *ngFor="let c of classes" [value]="c.id">{{ c.name }}</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Section (optional)</span>
+        <select [(ngModel)]="sectionId">
+          <option [value]="null">— whole class —</option>
+          <option *ngFor="let s of sectionsForClass" [value]="s.id">{{ s.name }}</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Subject</span>
+        <select [(ngModel)]="subjectId">
+          <option *ngFor="let s of subjects" [value]="s.id">{{ s.name }}</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Assessment type</span>
+        <select [(ngModel)]="examType">
+          <option value="weekly">Weekly Test</option>
+          <option value="monthly">Monthly Test</option>
+          <option value="mid_term">Mid Term</option>
+          <option value="final_term">Final Term</option>
+          <option value="worksheet">Worksheet</option>
+          <option value="other">Other</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Total marks</span>
+        <input type="number" [(ngModel)]="totalMarks" min="1" max="500" />
+      </label>
+      <label class="field">
+        <span>Title (optional)</span>
+        <input type="text" [(ngModel)]="title" placeholder="e.g. Maths Weekly Test 3" />
+      </label>
+    </div>
+    <p class="muted">
+      File columns: <code>roll_no</code>, <code>marks</code>, optional <code>name</code> and <code>remarks</code>.
+      Students are matched by roll number within the selected class.
+    </p>
+    <label class="btn primary file-btn" [class.disabled]="uploading">
+      {{ uploading ? 'Importing…' : '📥 Choose Excel / CSV file' }}
+      <input type="file" accept=".xlsx,.xls,.csv" (change)="onFileSelected($event)" [disabled]="uploading" />
+    </label>
+  </div>
+
+  <!-- Import result -->
+  <div class="card" *ngIf="importResult">
+    <div class="card-head"><h3>Import Summary</h3></div>
+    <p><strong>{{ importResult.imported }}</strong> students imported.</p>
+    <div class="alert warn" *ngIf="importResult.unmatched?.length">
+      Roll numbers not found in this class (add them in Setup):
+      <span *ngFor="let u of importResult.unmatched" class="chip warn-chip">{{ u.roll_no }}</span>
+    </div>
+  </div>
+
+  <!-- Detail -->
+  <div class="card preview-card" *ngIf="detail">
+    <div class="card-head">
+      <h3>{{ detail.title }}</h3>
+      <div class="head-actions">
+        <button class="btn secondary sm" (click)="exportMarksheet('xlsx')">⬇ Excel</button>
+        <button class="btn secondary sm" (click)="exportMarksheet('pdf')">⬇ PDF</button>
+        <button class="btn danger sm" (click)="deleteMarksheet(detail.id)">Delete</button>
+        <button class="btn ghost sm" (click)="closeDetail()">✕</button>
+      </div>
+    </div>
+    <p class="preview-meta">
+      {{ detail.class }}<span *ngIf="detail.section"> · {{ detail.section }}</span> ·
+      {{ detail.subject }}<span *ngIf="detail.exam_type"> · {{ detail.exam_type }}</span> ·
+      Total marks: {{ detail.total_marks }}<span *ngIf="detail.source_file_name"> · from {{ detail.source_file_name }}</span>
+    </p>
+
+    <div class="stat-grid" *ngIf="detail.stats">
+      <div class="stat-box"><strong>{{ detail.stats.count }}</strong><span>Students</span></div>
+      <div class="stat-box"><strong>{{ detail.stats.average_percent }}%</strong><span>Average</span></div>
+      <div class="stat-box"><strong>{{ detail.stats.highest }}</strong><span>Highest</span></div>
+      <div class="stat-box"><strong>{{ detail.stats.lowest }}</strong><span>Lowest</span></div>
+      <div class="stat-box"><strong>{{ detail.stats.pass_rate }}%</strong><span>Pass rate</span></div>
+    </div>
+
+    <div class="table-scroll" *ngIf="detail.entries?.length">
+      <table class="table">
+        <thead>
+          <tr><th>Roll No</th><th>Student</th><th>Marks</th><th>Percent</th><th>Grade</th><th>Remarks</th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let e of detail.entries">
+            <td>{{ e.roll_no }}</td>
+            <td><strong>{{ e.name }}</strong></td>
+            <td>{{ e.obtained_marks }} / {{ e.total_marks }}</td>
+            <td>{{ e.percent }}%</td>
+            <td><span class="chip" [class.fail]="e.grade === 'F'">{{ e.grade }}</span></td>
+            <td>{{ e.remarks || '—' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- List -->
+  <div class="card">
+    <div class="card-head">
+      <h3>Saved Marksheets</h3>
+      <div class="filters">
+        <select [(ngModel)]="filterClassId" (change)="loadList()">
+          <option [value]="null">All classes</option>
+          <option *ngFor="let c of classes" [value]="c.id">{{ c.name }}</option>
+        </select>
+        <select [(ngModel)]="filterSubjectId" (change)="loadList()">
+          <option [value]="null">All subjects</option>
+          <option *ngFor="let s of allSubjects" [value]="s.id">{{ s.name }}</option>
+        </select>
+      </div>
+    </div>
+    <p class="empty" *ngIf="!marksheets.length">No marksheets yet — upload your first marks file above.</p>
+    <div class="table-scroll" *ngIf="marksheets.length">
+      <table class="table">
+        <thead>
+          <tr><th>Title</th><th>Class</th><th>Subject</th><th>Type</th><th>Total</th><th>Created</th><th></th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let m of marksheets" [class.active-row]="detail?.id === m.id">
+            <td><strong>{{ m.title }}</strong></td>
+            <td>{{ m.class }}<small *ngIf="m.section"> · {{ m.section }}</small></td>
+            <td>{{ m.subject }}</td>
+            <td>{{ m.exam_type || '—' }}</td>
+            <td>{{ m.total_marks }}</td>
+            <td>{{ m.created_at | date: 'mediumDate' }}</td>
+            <td><button class="btn secondary sm" (click)="openMarksheet(m.id)">Open</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

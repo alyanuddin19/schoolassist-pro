@@ -1,0 +1,142 @@
+<div class="page">
+
+  <div class="page-head">
+    <div>
+      <h1>Worksheet Generator</h1>
+      <p class="page-sub">Practice sheets, homework and class work — with answer key and marking scheme.</p>
+    </div>
+  </div>
+
+  <div class="alert error" *ngIf="error">{{ error }}</div>
+  <div class="alert success" *ngIf="notice">{{ notice }}</div>
+  <div class="loading" *ngIf="loading">Loading…</div>
+
+  <!-- Generator -->
+  <div class="card form-card">
+    <div class="card-head"><h3>New Worksheet</h3></div>
+    <div class="form-grid">
+      <label class="field">
+        <span>Class</span>
+        <select [(ngModel)]="classId" (change)="onClassChange()">
+          <option *ngFor="let c of classes" [value]="c.id">{{ c.name }}</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Section (optional)</span>
+        <select [(ngModel)]="sectionId">
+          <option [value]="null">— whole class —</option>
+          <option *ngFor="let s of sectionsForClass" [value]="s.id">{{ s.name }}</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Subject</span>
+        <select [(ngModel)]="subjectId">
+          <option *ngFor="let s of subjects" [value]="s.id">{{ s.name }}</option>
+        </select>
+      </label>
+      <label class="field wide">
+        <span>Topic</span>
+        <input type="text" [(ngModel)]="topic" placeholder="e.g. digestion, fractions, tenses" />
+      </label>
+      <label class="field">
+        <span>Title (optional)</span>
+        <input type="text" [(ngModel)]="title" placeholder="e.g. Digestion Practice Sheet" />
+      </label>
+      <label class="field">
+        <span>Difficulty</span>
+        <select [(ngModel)]="difficulty">
+          <option value="easy">Easy</option>
+          <option value="medium">Medium</option>
+          <option value="hard">Hard</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Language</span>
+        <select [(ngModel)]="language">
+          <option value="en">English</option>
+          <option value="ur">اردو Urdu</option>
+          <option value="roman_urdu">Roman Urdu</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>MCQs</span>
+        <input type="number" [(ngModel)]="mcq" min="0" max="30" />
+      </label>
+      <label class="field">
+        <span>Short questions</span>
+        <input type="number" [(ngModel)]="short" min="0" max="20" />
+      </label>
+      <label class="field">
+        <span>Long questions</span>
+        <input type="number" [(ngModel)]="long" min="0" max="10" />
+      </label>
+      <label class="field wide">
+        <span>Instructions (optional)</span>
+        <input type="text" [(ngModel)]="instructions" placeholder="e.g. Show all working" />
+      </label>
+    </div>
+    <button class="btn primary" (click)="generate()" [disabled]="generating">
+      {{ generating ? 'Generating with Qwen AI…' : '✨ Generate worksheet' }}
+    </button>
+    <p class="muted hint">Generation uses the Qwen API. Answer key and marking scheme are created automatically.</p>
+  </div>
+
+  <!-- Preview -->
+  <div class="card preview-card" *ngIf="preview">
+    <div class="card-head">
+      <h3>{{ preview.title }}</h3>
+      <div class="head-actions">
+        <button class="btn secondary sm" (click)="exportWorksheet('pdf')">⬇ PDF</button>
+        <button class="btn secondary sm" (click)="exportWorksheet('docx')">⬇ DOCX</button>
+        <button class="btn danger sm" (click)="deleteWorksheet(preview.id)">Delete</button>
+        <button class="btn ghost sm" (click)="closePreview()">✕</button>
+      </div>
+    </div>
+    <p class="preview-meta">
+      {{ preview.class }}<span *ngIf="preview.section"> · {{ preview.section }}</span> ·
+      {{ preview.subject }}<span *ngIf="preview.topic"> · {{ preview.topic }}</span> ·
+      {{ preview.language }} · {{ preview.difficulty }}
+    </p>
+    <div class="tabs small">
+      <button class="tab" [class.active]="previewTab === 'content'" (click)="setPreviewTab('content')">Worksheet</button>
+      <button class="tab" [class.active]="previewTab === 'answer'" (click)="setPreviewTab('answer')">Answer Key</button>
+      <button class="tab" [class.active]="previewTab === 'scheme'" (click)="setPreviewTab('scheme')">Marking Scheme</button>
+    </div>
+    <pre class="doc-preview">{{ previewTab === 'content' ? preview.content : previewTab === 'answer' ? preview.answer_key : preview.marking_scheme }}</pre>
+  </div>
+
+  <!-- List -->
+  <div class="card">
+    <div class="card-head">
+      <h3>Saved Worksheets</h3>
+      <div class="filters">
+        <select [(ngModel)]="filterClassId" (change)="loadList()">
+          <option [value]="null">All classes</option>
+          <option *ngFor="let c of classes" [value]="c.id">{{ c.name }}</option>
+        </select>
+        <select [(ngModel)]="filterSubjectId" (change)="loadList()">
+          <option [value]="null">All subjects</option>
+          <option *ngFor="let s of allSubjects" [value]="s.id">{{ s.name }}</option>
+        </select>
+      </div>
+    </div>
+    <p class="empty" *ngIf="!worksheets.length">No worksheets yet — generate your first one above.</p>
+    <div class="table-scroll" *ngIf="worksheets.length">
+      <table class="table">
+        <thead>
+          <tr><th>Title</th><th>Topic</th><th>Class</th><th>Subject</th><th>Created</th><th></th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let w of worksheets" [class.active-row]="preview?.id === w.id">
+            <td><strong>{{ w.title }}</strong></td>
+            <td>{{ w.topic || '—' }}</td>
+            <td>{{ w.class }}</td>
+            <td>{{ w.subject }}</td>
+            <td>{{ w.created_at | date: 'mediumDate' }}</td>
+            <td><button class="btn secondary sm" (click)="openWorksheet(w.id)">Open</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

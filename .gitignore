@@ -1,0 +1,40 @@
+# OS junk
+Thumbs.db
+.DS_Store
+Desktop.ini
+
+# Editors
+.vscode/
+.idea/
+
+# Secrets - never commit real keys (backend/.gitignore reinforces this)
+.env
+.env.local
+.env.*.local
+*.pem
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Local databases & runtime data - never commit user data
+*.db
+*.sqlite
+*.sqlite3
+uploads/
+generated/
+
+# Node / Angular
+node_modules/
+dist/
+.angular/
+npm-debug.log*
+
+# Deploy tooling local state
+.vercel/
+*.log
+
+# Local secret handoff files
+render-secrets.txt

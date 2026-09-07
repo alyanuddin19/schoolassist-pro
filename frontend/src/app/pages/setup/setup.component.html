@@ -1,0 +1,774 @@
+<div class="page">
+
+  <div class="page-head">
+    <div>
+      <h1>{{ pageTitle }}</h1>
+      <p class="page-sub">{{ pageSubtitle }}</p>
+    </div>
+  </div>
+
+  <div class="alert error" *ngIf="error">{{ error }}</div>
+  <div class="alert success" *ngIf="notice">{{ notice }}</div>
+  <div class="alert info" *ngIf="!canManage">
+    You can view the setup, but only the school owner, principal or subject coordinator can change it.
+  </div>
+  <div class="loading" *ngIf="loading">Loading…</div>
+
+  <!-- ============ Classes & Sections ============ -->
+  <ng-container *ngIf="tab === 'classes'">
+    <div class="grid cols-2">
+      <div class="card form-card" *ngIf="canManage">
+        <div class="card-head"><h3>Add Class</h3></div>
+        <div class="form-grid">
+          <label class="field">
+            <span>Class name</span>
+            <input type="text" [(ngModel)]="newClassName" (ngModelChange)="onClassNameChange()" placeholder="e.g. Grade 5" />
+          </label>
+          <label class="field">
+            <span>Level</span>
+            <select [(ngModel)]="newClassLevel" (ngModelChange)="onLevelChange()">
+              <option value="primary">Primary (classes 1-5)</option>
+              <option value="secondary">Secondary (classes 6-10)</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Grade</span>
+            <select [(ngModel)]="newGradeLevel">
+              <option *ngFor="let g of levelGrades" [ngValue]="g">Grade {{ g }}</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Class capacity (optional)</span>
+            <input type="number" [(ngModel)]="newClassCapacity" placeholder="e.g. 40" min="1" />
+          </label>
+        </div>
+        <button class="btn primary" (click)="createClass()">Add class</button>
+      </div>
+
+      <div class="card form-card" *ngIf="canManage">
+        <div class="card-head"><h3>Add Section</h3></div>
+        <div class="form-grid">
+          <label class="field">
+            <span>Class</span>
+            <select [(ngModel)]="sectionClassId">
+              <option *ngFor="let c of classes" [value]="c.id">{{ c.name }}</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Section name</span>
+            <input type="text" [(ngModel)]="sectionName" placeholder="e.g. A, B, Morning" />
+          </label>
+          <label class="field">
+            <span>Class teacher (optional)</span>
+            <select [(ngModel)]="sectionTeacherId">
+              <option [value]="null">— not assigned —</option>
+              <option *ngFor="let t of teachers" [value]="t.id">{{ t.name }}</option>
+            </select>
+          </label>
+        </div>
+        <button class="btn primary" (click)="addSection()">Add section</button>
+      </div>
+    </div>
+
+    <div class="card form-card" *ngIf="editingClass">
+      <div class="card-head">
+        <h3>Edit Class — {{ editingClass.name }}</h3>
+        <button class="btn secondary sm" (click)="cancelEditClass()">Cancel</button>
+      </div>
+      <div class="form-grid">
+        <label class="field">
+          <span>Class name</span>
+          <input type="text" [(ngModel)]="classForm.name" />
+        </label>
+        <label class="field">
+          <span>Level (grade)</span>
+          <select [(ngModel)]="classForm.grade_level">
+            <option [ngValue]="null">— grade not set —</option>
+            <option *ngFor="let g of gradeChoices" [ngValue]="g">
+              {{ g <= 5 ? 'Primary' : 'Secondary' }} · grade {{ g }}
+            </option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Class capacity (optional)</span>
+          <input type="number" [(ngModel)]="classForm.capacity" min="1" placeholder="blank = no cap" />
+        </label>
+      </div>
+      <p class="hint">
+        {{ editingClass.students }} active students are currently in this class.
+        Grades 1-5 are primary, 6-10 are secondary.
+      </p>
+      <button class="btn primary" (click)="saveClass()" [disabled]="savingStructure">
+        {{ savingStructure ? 'Saving…' : 'Save class' }}
+      </button>
+
+      <div class="edit-sections">
+        <div class="level-head">
+          <h4>Sections in this class</h4>
+          <span class="chip neutral">{{ sectionRows.length }}</span>
+        </div>
+        <p class="muted" *ngIf="!sectionRows.length">No sections yet — add the first one below.</p>
+        <div class="section-edit-row" *ngFor="let row of sectionRows">
+          <input type="text" class="cell-input" [(ngModel)]="row.name" placeholder="Section name" />
+          <select class="cell-select" [(ngModel)]="row.class_teacher_id">
+            <option [value]="null">— no class teacher —</option>
+            <option *ngFor="let t of teachers" [value]="t.id">{{ t.name }}</option>
+          </select>
+          <button class="btn primary sm" (click)="saveSectionRow(row)" [disabled]="savingStructure">Save</button>
+          <button class="btn danger sm" (click)="removeSectionRow(row)" [disabled]="savingStructure">Remove</button>
+        </div>
+        <div class="section-edit-row">
+          <input type="text" class="cell-input" [(ngModel)]="newSectionName" placeholder="New section (e.g. A)" />
+          <select class="cell-select" [(ngModel)]="newSectionTeacherId">
+            <option [value]="null">— no class teacher —</option>
+            <option *ngFor="let t of teachers" [value]="t.id">{{ t.name }}</option>
+          </select>
+          <button class="btn sm" (click)="addSectionToEditingClass()" [disabled]="savingStructure">Add section</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card form-card" *ngIf="editingSection">
+      <div class="card-head">
+        <h3>Edit Section — {{ editingSectionClass?.name }} · {{ editingSection.name }}</h3>
+        <button class="btn secondary sm" (click)="cancelEditSection()">Cancel</button>
+      </div>
+      <div class="form-grid">
+        <label class="field">
+          <span>Section name</span>
+          <input type="text" [(ngModel)]="sectionForm.name" />
+        </label>
+        <label class="field">
+          <span>Class teacher</span>
+          <select [(ngModel)]="sectionForm.class_teacher_id">
+            <option [value]="null">— not assigned —</option>
+            <option *ngFor="let t of teachers" [value]="t.id">{{ t.name }}</option>
+          </select>
+        </label>
+      </div>
+      <button class="btn primary" (click)="saveSection()" [disabled]="savingStructure">
+        {{ savingStructure ? 'Saving…' : 'Save section' }}
+      </button>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h3>Classes</h3>
+        <div class="level-filter">
+          <button class="chip pick" [class.active]="levelFilter === 'all'" (click)="levelFilter = 'all'">All</button>
+          <button class="chip pick" [class.active]="levelFilter === 'primary'" (click)="levelFilter = 'primary'">Primary (1-5)</button>
+          <button class="chip pick" [class.active]="levelFilter === 'secondary'" (click)="levelFilter = 'secondary'">Secondary (6-10)</button>
+        </div>
+      </div>
+      <p class="empty" *ngIf="!classes.length">No classes yet. Add your first class above.</p>
+      <p class="empty" *ngIf="classes.length && !levelGroups.length">
+        No {{ levelFilter }} classes yet.
+      </p>
+
+      <div class="level-group" *ngFor="let group of levelGroups">
+        <div class="level-head">
+          <h4>{{ group.title }}</h4>
+          <small class="muted">{{ group.hint }}</small>
+          <span class="chip neutral">{{ group.cards.length }}</span>
+        </div>
+        <p class="empty" *ngIf="!group.cards.length">No classes in this level yet.</p>
+        <div class="class-grid" *ngIf="group.cards.length">
+          <div class="class-box" *ngFor="let card of group.cards">
+            <div class="class-head">
+              <div>
+                <strong>{{ card.classInfo.name }}</strong>
+                <small>
+                  {{ card.students }} student{{ card.students === 1 ? '' : 's' }}
+                  <ng-container *ngIf="!card.section && card.classInfo.capacity"> of {{ card.classInfo.capacity }} seats</ng-container>
+                  <ng-container *ngIf="card.classInfo.grade_level"> · grade {{ card.classInfo.grade_level }}</ng-container>
+                </small>
+                <div class="chips">
+                  <span class="chip neutral level-chip" *ngIf="levelLabel(card.classInfo)">{{ levelLabel(card.classInfo) }}</span>
+                  <span class="chip" *ngIf="card.section">Section {{ card.section.name }}</span>
+                </div>
+              </div>
+              <div class="class-actions" *ngIf="canManage">
+                <button class="btn secondary sm" (click)="startEditClass(card.classInfo)">Edit</button>
+                <button class="btn danger sm" *ngIf="!card.section" (click)="deleteClass(card.classInfo)">Delete</button>
+                <button class="btn danger sm" *ngIf="card.section" (click)="deleteSection(card.section.id, card.classInfo.name)">Remove</button>
+              </div>
+            </div>
+
+            <ng-container *ngIf="!card.section && card.classInfo.capacity">
+              <span class="progress">
+                <span [style.width.%]="capacityPercent(card.classInfo)" [class.full]="card.classInfo.students >= card.classInfo.capacity"></span>
+              </span>
+              <small class="muted" *ngIf="card.classInfo.students >= card.classInfo.capacity">This class is full.</small>
+            </ng-container>
+
+            <small class="muted" *ngIf="card.section">
+              {{ card.section.class_teacher ? 'Class teacher: ' + card.section.class_teacher : 'No class teacher yet' }}
+            </small>
+            <small class="muted" *ngIf="!card.section">No sections (whole class)</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ============ Subjects ============ -->
+  <ng-container *ngIf="tab === 'subjects'">
+    <div class="card form-card" *ngIf="canManage">
+      <div class="card-head"><h3>Add Subject</h3></div>
+      <div class="form-grid">
+        <label class="field">
+          <span>Subject name</span>
+          <input type="text" [(ngModel)]="newSubjectName" placeholder="e.g. Mathematics" />
+        </label>
+        <label class="field">
+          <span>Code (optional)</span>
+          <input type="text" [(ngModel)]="newSubjectCode" placeholder="e.g. MATH" />
+        </label>
+      </div>
+      <button class="btn primary" (click)="createSubject()">Add subject</button>
+    </div>
+
+    <div class="card form-card" *ngIf="editingSubject">
+      <div class="card-head">
+        <h3>Edit Subject — {{ editingSubject.name }}</h3>
+        <button class="btn secondary sm" (click)="cancelEditSubject()">Cancel</button>
+      </div>
+      <div class="form-grid">
+        <label class="field">
+          <span>Subject name</span>
+          <input type="text" [(ngModel)]="subjectForm.name" />
+        </label>
+        <label class="field">
+          <span>Code (optional)</span>
+          <input type="text" [(ngModel)]="subjectForm.code" placeholder="blank = no code" />
+        </label>
+      </div>
+      <p class="hint">Renaming a subject keeps its marksheets, tests and worksheets intact.</p>
+      <button class="btn primary" (click)="saveSubject()" [disabled]="savingSubject">
+        {{ savingSubject ? 'Saving…' : 'Save subject' }}
+      </button>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h3>Subjects</h3></div>
+      <p class="empty" *ngIf="!subjects.length">No subjects yet.</p>
+      <div class="chips wrap" *ngIf="subjects.length">
+        <span class="chip" *ngFor="let s of subjects">
+          {{ s.name }}<span class="chip-code" *ngIf="s.code"> · {{ s.code }}</span>
+          <ng-container *ngIf="canManage">
+            <button class="chip-x" (click)="startEditSubject(s)" title="Edit subject">✎</button>
+            <button class="chip-x" (click)="deleteSubject(s)" title="Delete subject">✕</button>
+          </ng-container>
+        </span>
+      </div>
+    </div>
+
+    <div class="card form-card">
+      <div class="card-head"><h3>Subjects per Class</h3></div>
+      <p class="muted">
+        Pick the subjects taught in each class — only these appear in the worksheet,
+        test and marksheet forms for that class.
+      </p>
+      <div class="form-grid">
+        <label class="field">
+          <span>Class</span>
+          <select [(ngModel)]="csClassId" (change)="onCsClassChange()">
+            <option *ngFor="let c of classes" [value]="c.id">{{ c.name }}</option>
+          </select>
+        </label>
+      </div>
+      <p class="empty" *ngIf="!subjects.length">Add subjects above first, then tick them per class.</p>
+      <div class="chips wrap" *ngIf="subjects.length">
+        <label class="chip toggle" *ngFor="let s of subjects" [class.on]="csSelected.includes(s.id)">
+          <input type="checkbox" [checked]="csSelected.includes(s.id)" (change)="toggleCsSubject(s.id)" />
+          {{ s.name }}
+        </label>
+      </div>
+      <button class="btn primary" *ngIf="canManage && subjects.length" (click)="saveClassSubjects()" [disabled]="csSaving">
+        {{ csSaving ? 'Saving…' : 'Save subjects for this class' }}
+      </button>
+    </div>
+  </ng-container>
+
+  <!-- ============ Students ============ -->
+  <ng-container *ngIf="tab === 'students'">
+    <div class="card form-card" *ngIf="canManage">
+      <div class="card-head"><h3>Add Student</h3></div>
+      <div class="form-grid">
+        <label class="field">
+          <span>Level</span>
+          <select [(ngModel)]="studentLevel" (ngModelChange)="onStudentLevelChange()">
+            <option value="all">All levels</option>
+            <option value="primary">Primary (classes 1-5)</option>
+            <option value="secondary">Secondary (classes 6-10)</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Class</span>
+          <select [(ngModel)]="studentClassId" (change)="onStudentClassChange()">
+            <option *ngFor="let c of studentClassOptions" [value]="c.id">{{ c.name }}</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Section (optional)</span>
+          <select [(ngModel)]="studentSectionId">
+            <option [value]="null">— whole class —</option>
+            <option *ngFor="let s of sectionsForStudentClass" [value]="s.id">{{ s.name }}</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Roll number</span>
+          <input type="text" [(ngModel)]="studentRollNo" placeholder="e.g. 12" />
+        </label>
+        <label class="field">
+          <span>Student name</span>
+          <input type="text" [(ngModel)]="studentName" placeholder="e.g. Ali Raza" />
+        </label>
+        <label class="field">
+          <span>Guardian name (optional)</span>
+          <input type="text" [(ngModel)]="guardianName" placeholder="e.g. Raza Ahmed" />
+        </label>
+        <label class="field">
+          <span>Guardian phone (optional)</span>
+          <input type="tel" [(ngModel)]="guardianPhone" placeholder="03xx-xxxxxxx" />
+        </label>
+      </div>
+      <p class="hint" *ngIf="!studentClassOptions.length">
+        No {{ studentLevel }} classes yet — add them from Class &amp; Section Management.
+      </p>
+      <button class="btn primary" (click)="createStudent()">Add student</button>
+    </div>
+
+    <div class="card form-card" *ngIf="canManage">
+      <div class="card-head"><h3>Bulk Import (Excel / CSV)</h3></div>
+      <p class="muted">
+        Columns: <code>roll_no</code>, <code>name</code>, <code>section</code> (optional), <code>guardian</code> (optional).
+        Any column order works.
+      </p>
+      <div class="import-row">
+        <select [(ngModel)]="importClassId" class="import-select">
+          <option *ngFor="let c of classes" [value]="c.id">{{ c.name }}</option>
+        </select>
+        <label class="btn secondary file-btn">
+          {{ importFile ? 'Change file' : 'Choose file' }}
+          <input type="file" accept=".xlsx,.xls,.csv" (change)="onImportFile($event)" />
+        </label>
+      </div>
+      <div class="import-row import-stage" *ngIf="importFile">
+        <span class="chip">{{ importFile.name }}</span>
+        <button class="btn primary sm" (click)="confirmImport()" [disabled]="importing">
+          {{ importing ? 'Importing…' : 'OK — add these students' }}
+        </button>
+        <button class="btn secondary sm" (click)="cancelImport()" [disabled]="importing">Cancel</button>
+      </div>
+      <p class="muted" *ngIf="importFile">
+        File is ready — press OK to add its students to the selected class.
+      </p>
+    </div>
+
+    <div class="card form-card">
+      <div class="card-head">
+        <h3>Students</h3>
+        <button class="btn secondary staff-toggle" (click)="showStudentFilters = !showStudentFilters"
+                [attr.aria-expanded]="showStudentFilters">
+          {{ showStudentFilters ? 'Hide Students' : 'Show Students' }}
+          <span class="caret" [class.open]="showStudentFilters" aria-hidden="true">▾</span>
+        </button>
+      </div>
+
+      <ng-container *ngIf="showStudentFilters">
+      <div class="filters">
+        <label class="field">
+          <span>Class</span>
+          <select [(ngModel)]="filterClassId" (change)="onFilterClassChange()">
+            <option [value]="null">All classes</option>
+            <option *ngFor="let c of classes" [value]="c.id">{{ c.name }}</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Section</span>
+          <select [(ngModel)]="filterSectionId" (change)="loadStudents()" [disabled]="!filterClassId">
+            <option [value]="null">All sections</option>
+            <option *ngFor="let s of filterSections" [value]="s.id">{{ s.name }}</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Name or roll no.</span>
+          <input type="search" [(ngModel)]="studentSearch" (keyup.enter)="loadStudents()" placeholder="e.g. Ali Raza or 12" />
+        </label>
+        <label class="chip toggle" [class.on]="showInactive">
+          <input type="checkbox" [(ngModel)]="showInactive" (change)="loadStudents()" />
+          Show inactive
+        </label>
+        <button class="btn primary sm" (click)="applyStudents()">Apply</button>
+        <button class="btn secondary sm" (click)="resetStudentFilters()">Reset</button>
+      </div>
+
+      <p class="muted" *ngIf="!studentsApplied">
+        Pick the options above and press Apply — the matching students will be listed here.
+      </p>
+      <ng-container *ngIf="studentsApplied">
+      <p class="empty" *ngIf="!students.length">No students match these filters.</p>
+      <div class="table-scroll" *ngIf="students.length">
+        <table class="table">
+          <thead>
+            <tr><th>Roll No</th><th>Name</th><th>Class</th><th>Section</th><th>Guardian</th><th>Status</th><th></th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let s of students">
+              <td class="mono">{{ s.roll_no }}</td>
+              <td><strong>{{ s.name }}</strong></td>
+              <td>{{ s.class }}</td>
+              <td>{{ s.section || '—' }}</td>
+              <td>{{ s.guardian_name || '—' }}<small *ngIf="s.guardian_phone"> · {{ s.guardian_phone }}</small></td>
+              <td>
+                <span class="chip ok" *ngIf="s.is_active !== false">Active</span>
+                <span class="chip neutral" *ngIf="s.is_active === false">Inactive</span>
+              </td>
+              <td>
+                <div class="row-actions">
+                  <button class="btn secondary sm" (click)="openProfile(s)">Profile</button>
+                  <button class="btn secondary sm" *ngIf="canManage" (click)="startEditStudent(s)">Edit</button>
+                  <button class="btn danger sm" *ngIf="canManage && s.is_active !== false" (click)="deactivateStudent(s)">Deactivate</button>
+                  <button class="btn primary sm" *ngIf="canManage && s.is_active === false" (click)="setStudentStatus(s, true)">Activate</button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      </ng-container>
+      </ng-container>
+    </div>
+
+    <!-- ============ Edit student ============ -->
+    <div class="card form-card" *ngIf="editingStudent">
+      <div class="card-head">
+        <h3>Edit Student — {{ editingStudent.name }}</h3>
+        <button class="btn secondary sm" (click)="cancelEditStudent()">Cancel</button>
+      </div>
+      <div class="form-grid">
+        <label class="field">
+          <span>Student name</span>
+          <input type="text" [(ngModel)]="editForm.name" placeholder="e.g. Ali Raza" />
+        </label>
+        <label class="field">
+          <span>Roll number</span>
+          <input type="text" [(ngModel)]="editForm.roll_no" placeholder="e.g. 12" />
+        </label>
+        <label class="field">
+          <span>Class</span>
+          <select [(ngModel)]="editForm.class_id" (change)="onEditClassChange()">
+            <option *ngFor="let c of classes" [value]="c.id">{{ c.name }}</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Section (optional)</span>
+          <select [(ngModel)]="editForm.section_id">
+            <option [value]="null">— whole class —</option>
+            <option *ngFor="let s of sectionsForEditClass" [value]="s.id">{{ s.name }}</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Guardian name (quick contact)</span>
+          <input type="text" [(ngModel)]="editForm.guardian_name" placeholder="e.g. Raza Ahmed" />
+        </label>
+        <label class="field">
+          <span>Guardian phone (quick contact)</span>
+          <input type="tel" [(ngModel)]="editForm.guardian_phone" placeholder="03xx-xxxxxxx" />
+        </label>
+      </div>
+      <p class="hint">Use the student profile below to link full parent/guardian records with email and relationship.</p>
+      <button class="btn primary" (click)="saveStudent()" [disabled]="savingStudent || !canManage">
+        {{ savingStudent ? 'Saving…' : 'Save changes' }}
+      </button>
+    </div>
+
+    <!-- ============ Student profile ============ -->
+    <div class="loading" *ngIf="loadingProfile">Loading profile…</div>
+
+    <div class="card profile-card" *ngIf="profile">
+      <div class="card-head">
+        <div>
+          <h3>{{ profile.name }}</h3>
+          <p class="muted">
+            {{ profile.class }}<ng-container *ngIf="profile.section"> · Section {{ profile.section }}</ng-container>
+            · Roll {{ profile.roll_no }}
+          </p>
+        </div>
+        <div class="row-actions">
+          <span class="chip ok" *ngIf="profile.is_active">Active</span>
+          <span class="chip neutral" *ngIf="!profile.is_active">Inactive</span>
+          <button class="btn secondary sm" *ngIf="canManage" (click)="setStudentStatus(profile, !profile.is_active)">
+            {{ profile.is_active ? 'Deactivate' : 'Activate' }}
+          </button>
+          <button class="btn secondary sm" *ngIf="canManage" (click)="startEditStudent(profile)">Edit</button>
+          <button class="btn secondary sm" (click)="closeProfile()">Close</button>
+        </div>
+      </div>
+
+      <div class="profile-stats">
+        <div><strong>{{ profile.attendance.present }}</strong><span>Present</span></div>
+        <div><strong>{{ profile.attendance.absent }}</strong><span>Absent</span></div>
+        <div><strong>{{ profile.attendance.leave }}</strong><span>Leave</span></div>
+        <div><strong>{{ profile.attendance.late }}</strong><span>Late</span></div>
+        <div><strong>{{ profileAttendancePercent }}</strong><span>Attendance</span></div>
+      </div>
+
+      <div class="profile-section">
+        <div class="card-head"><h3>Parents &amp; Guardians</h3></div>
+        <p class="muted" *ngIf="profile.guardian_name || profile.guardian_phone">
+          Quick contact on file: {{ profile.guardian_name || '—' }}<ng-container *ngIf="profile.guardian_phone"> · {{ profile.guardian_phone }}</ng-container>
+        </p>
+        <p class="empty" *ngIf="!profile.guardians?.length">No guardian record linked yet.</p>
+        <div class="table-scroll" *ngIf="profile.guardians?.length">
+          <table class="table">
+            <thead>
+              <tr><th>Name</th><th>Relationship</th><th>Phone</th><th>Email</th><th *ngIf="canManage"></th></tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let g of profile.guardians">
+                <td><strong>{{ g.full_name }}</strong></td>
+                <td>{{ g.relationship || '—' }}</td>
+                <td>{{ g.phone || '—' }}</td>
+                <td>{{ g.email || '—' }}</td>
+                <td *ngIf="canManage">
+                  <button class="btn danger sm" (click)="removeGuardianLink(g.id, g.full_name)">Unlink</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="guardian-form" *ngIf="canManage">
+          <div class="chip-row">
+            <button class="chip pick" [class.active]="guardianMode === 'existing'" (click)="guardianMode = 'existing'">Link existing guardian</button>
+            <button class="chip pick" [class.active]="guardianMode === 'new'" (click)="guardianMode = 'new'">Add new guardian</button>
+          </div>
+
+          <div class="form-grid" *ngIf="guardianMode === 'existing'">
+            <label class="field">
+              <span>Guardian</span>
+              <select [(ngModel)]="linkGuardianId">
+                <option [value]="null">— select guardian —</option>
+                <option *ngFor="let g of availableGuardians" [value]="g.id">
+                  {{ g.full_name }}<ng-container *ngIf="g.phone"> · {{ g.phone }}</ng-container>
+                </option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Relationship with student</span>
+              <select [(ngModel)]="linkRelationship">
+                <option *ngFor="let r of relationships" [value]="r">{{ r }}</option>
+              </select>
+            </label>
+          </div>
+          <p class="empty" *ngIf="guardianMode === 'existing' && !availableGuardians.length">
+            Every saved guardian is already linked to this student — switch to “Add new guardian”.
+          </p>
+
+          <div class="form-grid" *ngIf="guardianMode === 'new'">
+            <label class="field">
+              <span>Full name</span>
+              <input type="text" [(ngModel)]="newGuardianName" placeholder="e.g. Raza Ahmed" />
+            </label>
+            <label class="field">
+              <span>Relationship with student</span>
+              <select [(ngModel)]="linkRelationship">
+                <option *ngFor="let r of relationships" [value]="r">{{ r }}</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Contact number</span>
+              <input type="tel" [(ngModel)]="newGuardianPhone" placeholder="03xx-xxxxxxx" />
+            </label>
+            <label class="field">
+              <span>Email</span>
+              <input type="email" [(ngModel)]="newGuardianEmail" placeholder="name@example.com" />
+            </label>
+          </div>
+
+          <p class="hint">Link the same guardian to several children to keep one contact record for the whole family.</p>
+          <button class="btn primary" (click)="saveGuardianLink()" [disabled]="savingGuardian">
+            {{ savingGuardian ? 'Saving…' : 'Save guardian' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="profile-section">
+        <div class="card-head"><h3>Recent Results</h3></div>
+        <p class="empty" *ngIf="!profile.results?.length">No marks recorded for this student yet.</p>
+        <div class="table-scroll" *ngIf="profile.results?.length">
+          <table class="table">
+            <thead>
+              <tr><th>Assessment</th><th>Subject</th><th>Obtained</th><th>Total</th><th>Percent</th><th>Remarks</th></tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let r of profile.results">
+                <td><strong>{{ r.title }}</strong></td>
+                <td>{{ r.subject }}</td>
+                <td>{{ r.obtained }}</td>
+                <td>{{ r.total }}</td>
+                <td>{{ percent(r.obtained, r.total) }}%</td>
+                <td>{{ r.remarks || '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Guardian directory: one contact record shared by all of a family's children -->
+    <div class="card">
+      <div class="card-head">
+        <h3>Parents &amp; Guardians</h3>
+        <input class="search-box" type="search" *ngIf="guardians.length" [(ngModel)]="guardianSearch"
+               placeholder="Search name, phone, email or child…" />
+      </div>
+      <p class="empty" *ngIf="!guardians.length">
+        <strong>No guardian records yet.</strong><br>
+        Open a student profile and add a parent or guardian — the same record can then be linked to several children.
+      </p>
+      <p class="empty" *ngIf="guardians.length && !directoryGuardians.length">
+        No guardian matches “{{ guardianSearch }}”.
+      </p>
+      <div class="table-scroll" *ngIf="directoryGuardians.length">
+        <table class="table">
+          <thead>
+            <tr><th>Guardian</th><th>Contact</th><th>Children</th><th *ngIf="canManage"></th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let g of directoryGuardians">
+              <td><strong>{{ g.full_name }}</strong></td>
+              <td>
+                <ng-container *ngIf="g.phone || g.email">
+                  <span class="mono" *ngIf="g.phone">{{ g.phone }}</span>
+                  <span class="hint" *ngIf="g.phone && g.email"> · </span>
+                  <span *ngIf="g.email">{{ g.email }}</span>
+                </ng-container>
+                <span class="hint" *ngIf="!g.phone && !g.email">No contact details</span>
+              </td>
+              <td>
+                <div class="chip-row" *ngIf="g.children.length">
+                  <button class="chip pick" *ngFor="let c of g.children" (click)="openChild(c.id)"
+                          [title]="'Open ' + c.name + '’s profile'">
+                    {{ c.name }}<ng-container *ngIf="c.relationship"> · {{ c.relationship }}</ng-container>
+                  </button>
+                </div>
+                <span class="hint" *ngIf="!g.children.length">Not linked to any student yet</span>
+              </td>
+              <td *ngIf="canManage">
+                <div class="row-actions">
+                  <button class="btn secondary sm" (click)="startEditGuardian(g)">Edit</button>
+                  <button class="btn danger sm" (click)="deleteGuardian(g)" [disabled]="g.children.length > 0"
+                          [title]="g.children.length ? 'Unlink the children first' : 'Remove from the directory'">Remove</button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card form-card" *ngIf="editingGuardian">
+      <div class="card-head">
+        <h3>Edit Guardian — {{ editingGuardian.full_name }}</h3>
+        <button class="btn secondary sm" (click)="cancelEditGuardian()">Cancel</button>
+      </div>
+      <div class="form-grid">
+        <label class="field">
+          <span>Full name</span>
+          <input type="text" [(ngModel)]="guardianForm.full_name" />
+        </label>
+        <label class="field">
+          <span>Contact number</span>
+          <input type="tel" [(ngModel)]="guardianForm.phone" placeholder="blank = remove" />
+        </label>
+        <label class="field">
+          <span>Email</span>
+          <input type="email" [(ngModel)]="guardianForm.email" placeholder="blank = remove" />
+        </label>
+      </div>
+      <p class="hint" *ngIf="editingGuardian.children.length">
+        Linked to {{ editingGuardian.children.length }} student{{ editingGuardian.children.length === 1 ? '' : 's' }} —
+        the new contact details apply to all of them.
+      </p>
+      <button class="btn primary" (click)="saveGuardian()" [disabled]="savingGuardian">
+        {{ savingGuardian ? 'Saving…' : 'Save guardian' }}
+      </button>
+    </div>
+  </ng-container>
+
+  <!-- ============ Teacher Assignments ============ -->
+  <ng-container *ngIf="tab === 'assignments'">
+    <div class="alert warn" *ngIf="!loading && !teachers.length">
+      There are no active teachers to assign yet — add teachers first, then map them to a subject and class.
+    </div>
+    <div class="card form-card" *ngIf="canManage">
+      <div class="card-head"><h3>Assign Teacher to Class &amp; Subject</h3></div>
+      <p class="hint">
+        This Teacher → Subject → Class → Section mapping drives the teacher dashboard,
+        suggests the right teacher in the timetable picker and decides which class
+        register a teacher is allowed to mark.
+      </p>
+      <div class="form-grid">
+        <label class="field">
+          <span>Teacher</span>
+          <select [(ngModel)]="assignTeacherId">
+            <option [value]="null">— select teacher —</option>
+            <option *ngFor="let t of teachers" [value]="t.id">{{ t.name }}</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Class</span>
+          <select [(ngModel)]="assignClassId" (change)="onAssignClassChange()">
+            <option *ngFor="let c of classes" [value]="c.id">{{ c.name }}</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Section (optional)</span>
+          <select [(ngModel)]="assignSectionId">
+            <option [value]="null">— whole class —</option>
+            <option *ngFor="let s of sectionsForAssignClass" [value]="s.id">{{ s.name }}</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Subject</span>
+          <select [(ngModel)]="assignSubjectId">
+            <option [value]="null">— select subject —</option>
+            <option *ngFor="let s of assignSubjects" [value]="s.id">{{ s.name }}</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Academic year</span>
+          <input type="text" [(ngModel)]="academicYear" placeholder="e.g. 2026-27" />
+        </label>
+      </div>
+      <button class="btn primary" (click)="createAssignment()">Save assignment</button>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h3>Teaching Assignments</h3></div>
+      <p class="empty" *ngIf="!assignments.length">No assignments yet.</p>
+      <div class="table-scroll" *ngIf="assignments.length">
+        <table class="table">
+          <thead>
+            <tr><th>Teacher</th><th>Class</th><th>Section</th><th>Subject</th><th>Year</th><th></th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let a of assignments">
+              <td>{{ a.teacher_name }}</td>
+              <td>{{ a.class }}</td>
+              <td>{{ a.section || '—' }}</td>
+              <td>{{ a.subject }}</td>
+              <td>{{ a.academic_year || '—' }}</td>
+              <td>
+                <button class="btn danger sm" *ngIf="canManage" (click)="deleteAssignment(a)">Remove</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </ng-container>
+</div>

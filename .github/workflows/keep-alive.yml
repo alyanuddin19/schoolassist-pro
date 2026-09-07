@@ -1,0 +1,28 @@
+name: Keep backend warm
+
+# Render free web services sleep after ~15 minutes without traffic; the next
+# request then waits 30-60s for a cold start. This pings the health endpoint
+# every 10 minutes during Pakistani school hours (Mon-Sat) so the app stays
+# responsive for teachers.
+#
+# One-time setup (after the Render service exists):
+#   GitHub repo -> Settings -> Secrets and variables -> Actions -> Variables
+#   -> New repository variable:
+#        RENDER_BACKEND_URL = https://schoolassist-api.onrender.com
+# Until that variable is set, this workflow quietly does nothing.
+
+on:
+  schedule:
+    - cron: "*/10 4-11 * * 1-6" # every 10 min, 09:00-18:00 PKT, Mon-Sat
+  workflow_dispatch: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping backend health endpoint
+        if: ${{ vars.RENDER_BACKEND_URL != '' }}
+        run: |
+          curl -sS -m 90 "${{ vars.RENDER_BACKEND_URL }}/api/health" > /dev/null \
+            && echo "Backend pinged - staying warm" \
+            || echo "Ping failed (maybe cold-starting) - next run will retry"

@@ -14,6 +14,12 @@ def _origin_list(name: str, default: str) -> list:
     return [item.strip() for item in raw.split(",") if item.strip()]
 
 
+def _default_database_url() -> str:
+    if os.getenv("VERCEL"):
+        return "sqlite:////tmp/schoolassist.db"
+    return "sqlite:///./schoolassist.db"
+
+
 class Settings:
     """Central configuration loaded from environment variables (.env)."""
 
@@ -21,7 +27,7 @@ class Settings:
     API_PREFIX: str = "/api"
 
     # Database (Supabase PostgreSQL in production; SQLite fallback for local dev)
-    DATABASE_URL: str = (os.getenv("DATABASE_URL") or "").strip() or "sqlite:///./schoolassist.db"
+    DATABASE_URL: str = (os.getenv("DATABASE_URL") or "").strip() or _default_database_url()
 
     # JWT auth
     JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY") or "schoolassist-dev-secret-change-me"

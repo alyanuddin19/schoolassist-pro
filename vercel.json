@@ -17,15 +17,14 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "api/index.py"
+      "dest": "/api/index.py"
     },
     {
-      "src": "/(.*\\.(?:js|css|ico|png|jpg|jpeg|svg|webp|txt|json|woff2?))",
-      "dest": "frontend/dist/schoolassist/$1"
+      "handle": "filesystem"
     },
     {
-      "src": "/(.*)",
-      "dest": "frontend/dist/schoolassist/index.html"
+      "src": "/.*",
+      "dest": "/index.html"
     }
   ]
 }

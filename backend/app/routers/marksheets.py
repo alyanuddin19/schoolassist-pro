@@ -1,8 +1,5 @@
 """Marksheet upload/import and management."""
 
-import io
-
-import pandas as pd
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
 
 from ..deps import OrgContext, get_org_context
@@ -10,6 +7,7 @@ from ..models import Marksheet, MarksheetEntry, SchoolClass, Section, Student, S
 from ..schemas import MarksheetManualRequest
 from ..services import analytics
 from ..services.access import ensure_teacher_can_access
+from ..services.tabular import read_table
 
 router = APIRouter(prefix="/marksheets", tags=["marksheets"])
 
@@ -116,22 +114,18 @@ async def upload_marksheet(
 
     content = await file.read()
     try:
-        if (file.filename or "").lower().endswith(".csv"):
-            frame = pd.read_csv(io.BytesIO(content))
-        else:
-            frame = pd.read_excel(io.BytesIO(content))
+        columns, rows = read_table(content, file.filename)
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Could not read the file. Upload .xlsx or .csv with columns: roll_no, marks.",
         )
 
-    frame.columns = [str(c).strip().lower().replace(" ", "_") for c in frame.columns]
-    roll_col = next((c for c in frame.columns if "roll" in c), None)
+    roll_col = next((c for c in columns if "roll" in c), None)
     marks_col = next(
-        (c for c in frame.columns if "mark" in c and "total" not in c), None
+        (c for c in columns if "mark" in c and "total" not in c), None
     )
-    remarks_col = next((c for c in frame.columns if "remark" in c), None)
+    remarks_col = next((c for c in columns if "remark" in c), None)
     if roll_col is None or marks_col is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -151,7 +145,7 @@ async def upload_marksheet(
 
     matched: list[tuple[int, float, str | None]] = []
     unmatched: list[dict] = []
-    for _, row in frame.iterrows():
+    for row in rows:
         roll_no = str(row[roll_col]).strip()
         raw_marks = row[marks_col]
         try:

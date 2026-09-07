@@ -9,7 +9,6 @@ python-multipart
 pydantic
 email-validator
 openai
-pandas
 openpyxl
 python-docx
 reportlab

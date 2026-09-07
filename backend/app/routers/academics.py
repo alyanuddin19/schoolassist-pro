@@ -1,12 +1,10 @@
 """Academic setup: classes, sections, subjects, students and teacher assignments."""
 
-import io
 import re
 import secrets
 from datetime import date as date_type
 from typing import Optional
 
-import pandas as pd
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
@@ -64,6 +62,7 @@ from ..schemas import (
 from ..services import mailer
 from ..services.access import ensure_seat_available, ensure_valid_role
 from ..services.seed import assign_default_subjects
+from ..services.tabular import read_table
 
 router = APIRouter(prefix="/academics", tags=["academics"])
 
@@ -819,20 +818,16 @@ async def import_students(
 
     content = await file.read()
     try:
-        if (file.filename or "").lower().endswith(".csv"):
-            frame = pd.read_csv(io.BytesIO(content))
-        else:
-            frame = pd.read_excel(io.BytesIO(content))
+        columns, rows = read_table(content, file.filename)
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Could not read the file. Upload .xlsx or .csv with columns: roll_no, name, section.",
         )
 
-    frame.columns = [str(c).strip().lower().replace(" ", "_") for c in frame.columns]
-    roll_col = next((c for c in frame.columns if "roll" in c), None)
-    name_col = next((c for c in frame.columns if c in ("name", "student", "student_name")), None)
-    section_col = next((c for c in frame.columns if "section" in c), None)
+    roll_col = next((c for c in columns if "roll" in c), None)
+    name_col = next((c for c in columns if c in ("name", "student", "student_name")), None)
+    section_col = next((c for c in columns if "section" in c), None)
     if roll_col is None or name_col is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -846,7 +841,7 @@ async def import_students(
 
     created = 0
     skipped: list[str] = []
-    for _, row in frame.iterrows():
+    for row in rows:
         roll_no = str(row[roll_col]).strip()
         name = str(row[name_col]).strip()
         if not roll_no or not name or roll_no.lower() == "nan":
